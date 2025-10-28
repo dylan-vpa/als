@@ -165,10 +165,10 @@ export default function OitDetailPage() {
 
   const renderResumen = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ fontSize: 15, color: "#4b5563" }}>
+      <div style={{ fontSize: 15, color: "#4b5563", overflowWrap: "anywhere" }}>
         {doc.summary || "Sin resumen disponible."}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, min(100%, 1fr)))", gap: 16 }}>
         {summaryBlocks.map((block) => (
           <div key={block.label} style={{ background: "#f8fafc", borderRadius: 18, padding: 18 }}>
             <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>{block.label}</div>
@@ -207,7 +207,7 @@ export default function OitDetailPage() {
   );
 
   const renderHallazgos = () => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, min(100%, 1fr)))", gap: 16 }}>
       {[
         { title: "Alertas", list: hallazgos.alerts },
         { title: "Faltantes", list: hallazgos.missing },
@@ -218,7 +218,7 @@ export default function OitDetailPage() {
           {section.list.length === 0 ? (
             <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "#6b7280" }}>Sin registros.</p>
           ) : (
-            <ul style={{ margin: "12px 0 0 18px", color: "#374151", fontSize: 13, lineHeight: 1.5 }}>
+            <ul style={{ margin: "12px 0 0 18px", color: "#374151", fontSize: 13, lineHeight: 1.5, wordBreak: "break-word" }}>
               {section.list.map((item, idx) => <li key={`${section.title}-${idx}`}>{item}</li>)}
             </ul>
           )}
@@ -238,16 +238,16 @@ export default function OitDetailPage() {
       return <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>No se detectaron necesidades adicionales.</p>;
     }
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, min(100%, 1fr)))", gap: 16, width: "100%" }}>
         {recs.recommendations.map((item, index) => (
           <div key={index} style={{ border: "1px solid #e2e8f0", borderRadius: 16, padding: 18, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontWeight: 600, fontSize: 15, color: "#0f172a" }}>{item.name}</span>
-              <span style={{ fontSize: 12, color: "#6366f1", fontWeight: 600 }}>{item.type}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <span style={{ fontWeight: 600, fontSize: 15, color: "#0f172a", flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span>
+              <span style={{ fontSize: 12, color: "#6366f1", fontWeight: 600, flex: "0 0 auto", maxWidth: "50%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.type}</span>
             </div>
             <span style={{ fontSize: 13, color: "#475569" }}>Cantidad sugerida: <strong>{item.quantity}</strong></span>
-            <span style={{ fontSize: 13, color: "#475569" }}>{item.reason}</span>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>
+            <span style={{ fontSize: 13, color: "#475569", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis", overflowWrap: "anywhere" }}>{item.reason}</span>
+            <span style={{ fontSize: 12, color: "#6b7280", display: "block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               Coincidencias: {recs.matches?.[item.type]?.length ? recs.matches[item.type].map((r) => r.name).join(", ") : "—"}
             </span>
           </div>
@@ -257,237 +257,126 @@ export default function OitDetailPage() {
   };
 
   return (
-    <DashboardLayout
-      title="Detalle OIT"
-      contentStyle={{ padding: "0 40px 32px 40px" }}
-    >
-      <div style={{
-        margin: "0 -40px 32px",
-        padding: "20px 40px",
-        background: "#ffffff",
-        borderBottom: "1px solid #e5e7eb",
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 20,
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#9ca3af", fontSize: 13 }}>
-            <Link to="/dashboard" style={{ color: "inherit", textDecoration: "none" }}>Dashboard</Link>
-            <ChevronRight size={14} />
-            <Link to="/dashboard/oit" style={{ color: "inherit", textDecoration: "none" }}>OITs</Link>
-            <ChevronRight size={14} />
-            <span>OIT #{doc.id}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#111827" }}>{doc.original_name || doc.filename}</h1>
-          </div>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", color: "#6b7280", fontSize: 13 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <CalendarDays size={14} /> {new Date(doc.created_at).toLocaleString()}
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Info size={14} /> Estado: {statusLabel}
-            </span>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link to={`/dashboard/oit/${doc.id}/muestreo`} className="btn btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <ClipboardList size={16} /> Ir a muestreo
-          </Link>
-          <Button
-            variant="secondary"
-            onClick={handleCheckDocument}
-            disabled={checkingDocument}
-            loading={checkingDocument}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <RefreshCcw size={16} /> Verificar IA
-          </Button>
-          <Button variant="primary" onClick={handleDownloadReport} disabled={!sampling || downloading}>
-            <FileDown size={16} /> {downloading ? "Generando…" : "Descargar informe"}
-          </Button>
-        </div>
-      </div>
-
-      <div style={{ background: "#ffffff", borderRadius: 20, border: "1px solid #e5e7eb", marginBottom: 24, padding: 20, display: "flex", gap: 24 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Resumen</div>
-          <h2 style={{ margin: "8px 0 12px 0", fontSize: 22, fontWeight: 700, color: "#111827" }}>Estado general</h2>
-          <p style={{ margin: 0, color: "#374151", lineHeight: 1.6 }}>{doc.summary || "Sin resumen disponible."}</p>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16, flex: 1 }}>
-          <div style={{ background: "#f8fafc", borderRadius: 16, padding: 16 }}>
-            <span style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.6 }}>Archivo</span>
-            <div style={{ marginTop: 6, fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block", maxWidth: "100%" }}>{doc.original_name || doc.filename}</div>
-          </div>
-          <div style={{ background: "#f8fafc", borderRadius: 16, padding: 16 }}>
-            <span style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.6 }}>Creado</span>
-            <div style={{ marginTop: 6, fontWeight: 600, color: "#0f172a" }}>{new Date(doc.created_at).toLocaleDateString()}</div>
-          </div>
-          <div style={{ background: "#eff6ff", borderRadius: 16, padding: 16 }}>
-            <span style={{ fontSize: 12, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: 0.6 }}>Estado</span>
-            <div style={{ marginTop: 6 }}>
-              {doc.status === "check" && <span className="badge badge-success">Completada</span>}
-              {doc.status === "alerta" && <span className="badge badge-warning">Alerta</span>}
-              {doc.status === "error" && <span className="badge badge-danger">Error</span>}
+    <DashboardLayout title="Detalle OIT">
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{
+          background: "#ffffff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 24,
+          padding: "20px 24px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 20,
+          justifyContent: "space-between"
+        }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: "1 1 260px", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#9ca3af", fontSize: 13, flexWrap: "wrap" }}>
+              <Link to="/dashboard" style={{ color: "inherit", textDecoration: "none" }}>Dashboard</Link>
+              <ChevronRight size={14} />
+              <Link to="/dashboard/oit" style={{ color: "inherit", textDecoration: "none" }}>OITs</Link>
+              <ChevronRight size={14} />
+              <span>OIT #{doc.id}</span>
+            </div>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#111827", maxWidth: "100%", whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "anywhere", lineHeight: 1.25 }}>{doc.original_name || doc.filename}</h1>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, color: "#6b7280", fontSize: 13 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <CalendarDays size={14} /> {new Date(doc.created_at).toLocaleString()}
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Info size={14} /> Estado: {statusLabel}
+              </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div style={{ background: "#ffffff", borderRadius: 20, border: "1px solid #e5e7eb", marginBottom: 24 }}>
-        <div style={{ display: "flex", overflowX: "auto", padding: "0 12px" }}>
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  border: "none",
-                  background: "none",
-                  padding: "16px 18px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontWeight: isActive ? 600 : 500,
-                  color: isActive ? "#1d4ed8" : "#6b7280",
-                  borderBottom: isActive ? "3px solid #1d4ed8" : "3px solid transparent",
-                  cursor: "pointer"
-                }}
-              >
-                <Icon size={16} /> {tab.label}
-              </button>
-            );
-          })}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "flex-end", flex: "1 1 220px", minWidth: 0 }}>
+            <Link to={`/dashboard/oit/${doc.id}/muestreo`} className="btn btn-secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
+              <ClipboardList size={16} /> Ir a muestreo
+            </Link>
+            <Button
+              variant="secondary"
+              onClick={handleCheckDocument}
+              disabled={checkingDocument}
+              loading={checkingDocument}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}
+            >
+              <RefreshCcw size={16} /> Verificar IA
+            </Button>
+            <Button variant="primary" onClick={handleDownloadReport} disabled={!sampling || downloading} style={{ display: "inline-flex", alignItems: "center", gap: 6, flex: "0 0 auto" }}>
+              <FileDown size={16} /> {downloading ? "Generando…" : "Descargar informe"}
+            </Button>
+          </div>
         </div>
 
-        <div style={{ padding: 24 }}>
-          {activeTab === "resumen" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
-              <div style={{ background: "#f8fafc", borderRadius: 18, padding: 20 }}>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#111827" }}>Alertas</h3>
-                {(doc.alerts || []).length === 0 ? (
-                  <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "#6b7280" }}>Sin alertas.</p>
-                ) : (
-                  <ul style={{ margin: "12px 0 0 18px", color: "#374151", fontSize: 13 }}>
-                    {doc.alerts?.map((item, idx) => <li key={idx}>{item}</li>)}
-                  </ul>
-                )}
-              </div>
-              <div style={{ background: "#f8fafc", borderRadius: 18, padding: 20 }}>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#111827" }}>Faltantes</h3>
-                {(doc.missing || []).length === 0 ? (
-                  <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "#6b7280" }}>Sin faltantes.</p>
-                ) : (
-                  <ul style={{ margin: "12px 0 0 18px", color: "#374151", fontSize: 13 }}>
-                    {doc.missing?.map((item, idx) => <li key={idx}>{item}</li>)}
-                  </ul>
-                )}
-              </div>
-              <div style={{ background: "#f8fafc", borderRadius: 18, padding: 20 }}>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#111827" }}>Evidencias</h3>
-                {(doc.evidence || []).length === 0 ? (
-                  <p style={{ margin: "8px 0 0 0", fontSize: 13, color: "#6b7280" }}>Sin evidencia disponible.</p>
-                ) : (
-                  <ul style={{ margin: "12px 0 0 18px", color: "#374151", fontSize: 13 }}>
-                    {doc.evidence?.map((item, idx) => <li key={idx}>{item}</li>)}
-                  </ul>
-                )}
-              </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
+          <div style={{
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 24,
+            padding: "20px 24px",
+            display: "grid",
+            gap: 20,
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, min(100%, 1fr)))"
+          }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Resumen</span>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Estado general</h2>
+              <p style={{ margin: 0, color: "#374151", lineHeight: 1.6, overflowWrap: "anywhere" }}>{doc.summary || "Sin resumen disponible."}</p>
             </div>
-          )}
-
-          {activeTab === "hallazgos" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#111827" }}>Hallazgos detallados</h3>
-              <div style={{ background: "#f8fafc", borderRadius: 16, padding: 20 }}>
-                {(doc.alerts || []).length === 0 && (doc.missing || []).length === 0 && (doc.evidence || []).length === 0 ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>Este documento no presenta hallazgos.</p>
-                ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-                    <section>
-                      <h4 style={{ margin: 0, fontSize: 13, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Alertas</h4>
-                      <ul style={{ margin: "10px 0 0 18px", color: "#374151", fontSize: 13 }}>
-                        {(doc.alerts || []).map((item, idx) => <li key={idx}>{item}</li>)}
-                      </ul>
-                    </section>
-                    <section>
-                      <h4 style={{ margin: 0, fontSize: 13, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Faltantes</h4>
-                      <ul style={{ margin: "10px 0 0 18px", color: "#374151", fontSize: 13 }}>
-                        {(doc.missing || []).map((item, idx) => <li key={idx}>{item}</li>)}
-                      </ul>
-                    </section>
-                    <section>
-                      <h4 style={{ margin: 0, fontSize: 13, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Evidencias</h4>
-                      <ul style={{ margin: "10px 0 0 18px", color: "#374151", fontSize: 13 }}>
-                        {(doc.evidence || []).map((item, idx) => <li key={idx}>{item}</li>)}
-                      </ul>
-                    </section>
-                  </div>
-                )}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, min(100%, 1fr)))", gap: 16 }}>
+              <div style={{ background: "#f8fafc", borderRadius: 16, padding: 16, minWidth: 0 }}>
+                <span style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.6 }}>Archivo</span>
+                <div style={{ marginTop: 6, fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{doc.original_name || doc.filename}</div>
               </div>
-            </div>
-          )}
-
-          {activeTab === "recursos" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#111827" }}>Recomendaciones de recursos</h3>
-              {!canViewRecs ? (
-                <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>
-                  Disponible cuando el estado sea "check" sin alertas ni faltantes.
-                </p>
-              ) : !recs ? (
-                <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>Cargando recomendaciones…</p>
-              ) : (recs.recommendations || []).length === 0 ? (
-                <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>No se detectaron necesidades adicionales.</p>
-              ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-                  {recs.recommendations.map((item, index) => (
-                    <div key={index} style={{ border: "1px solid #e2e8f0", borderRadius: 16, padding: 18, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: 600, fontSize: 15, color: "#0f172a" }}>{item.name}</span>
-                        <span style={{ fontSize: 12, color: "#6366f1", fontWeight: 600 }}>{item.type}</span>
-                      </div>
-                      <span style={{ fontSize: 13, color: "#475569" }}>Cantidad sugerida: <strong>{item.quantity}</strong></span>
-                      <span style={{ fontSize: 13, color: "#475569" }}>{item.reason}</span>
-                      <span style={{ fontSize: 12, color: "#6b7280" }}>
-                        Coincidencias: {recs.matches?.[item.type]?.length ? recs.matches[item.type].map((r) => r.name).join(", ") : "—"}
-                      </span>
-                    </div>
-                  ))}
+              <div style={{ background: "#f8fafc", borderRadius: 16, padding: 16, minWidth: 0 }}>
+                <span style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.6 }}>Creado</span>
+                <div style={{ marginTop: 6, fontWeight: 600, color: "#0f172a" }}>{new Date(doc.created_at).toLocaleDateString()}</div>
+              </div>
+              <div style={{ background: "#eff6ff", borderRadius: 16, padding: 16, minWidth: 0 }}>
+                <span style={{ fontSize: 12, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: 0.6 }}>Estado</span>
+                <div style={{ marginTop: 6 }}>
+                  {doc.status === "check" && <span className="badge badge-success">Completada</span>}
+                  {doc.status === "alerta" && <span className="badge badge-warning">Alerta</span>}
+                  {doc.status === "error" && <span className="badge badge-danger">Error</span>}
                 </div>
-              )}
+              </div>
             </div>
-          )}
+          </div>
 
+          <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 24 }}>
+            <div style={{ display: "flex", overflowX: "auto", padding: "0 12px" }}>
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      padding: "16px 18px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontWeight: isActive ? 600 : 500,
+                      color: isActive ? "#1d4ed8" : "#6b7280",
+                      borderBottom: isActive ? "3px solid #1d4ed8" : "3px solid transparent",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <Icon size={16} /> {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ padding: 24 }}>
+              {activeTab === "resumen" && renderResumen()}
+              {activeTab === "hallazgos" && renderHallazgos()}
+              {activeTab === "recursos" && renderRecursos()}
+            </div>
+          </div>
         </div>
       </div>
-
-      {(checkingDocument || checkResult) && (
-        <div style={{ background: "#f8fafc", borderRadius: 18, border: "1px solid #e2e8f0", padding: 20, marginBottom: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#0f172a" }}>Resultado de verificación IA</h3>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>{new Date().toLocaleString()}</span>
-          </div>
-          {checkingDocument && <div style={{ fontSize: 13, color: "#6b7280" }}>Ejecutando verificación…</div>}
-          {checkResult && (
-            <>
-              <pre style={{ whiteSpace: "pre-wrap", fontSize: 12, color: "#334155", margin: 0 }}>
-                {JSON.stringify(checkResult.result, null, 2)}
-              </pre>
-              {checkResult.used_fallback && (
-                <p style={{ margin: "12px 0 0 0", fontSize: 12, color: "#dc2626" }}>
-                  Se utilizó el modelo de respaldo porque el modelo seleccionado no estaba disponible.
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      )}
     </DashboardLayout>
   );
 }

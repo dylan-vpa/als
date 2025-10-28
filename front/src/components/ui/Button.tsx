@@ -16,11 +16,14 @@ export default function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseClass = "btn";
-  const variantClass = `btn-${variant}`;
-  const sizeClass = size === "sm" ? "text-sm px-3 py-2" : size === "lg" ? "text-lg px-6 py-3" : "";
-  
-  const classes = [baseClass, variantClass, sizeClass, className].filter(Boolean).join(" ");
+  const classes = [
+    "btn",
+    `btn-${variant}`,
+    size !== "md" ? `btn-${size}` : "",
+    className
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <button

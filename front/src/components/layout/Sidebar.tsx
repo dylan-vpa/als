@@ -1,8 +1,14 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Receipt, Wrench, MessageSquare, User } from "lucide-react";
+import { Receipt, Wrench, MessageSquare, User, X } from "lucide-react";
 
-export default function Sidebar() {
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  isMobile?: boolean;
+  onClose?: () => void;
+  onNavigate?: () => void;
+}
+
+export default function Sidebar({ isMobile = false, onClose, onNavigate, className = "", ...rest }: SidebarProps) {
   const { pathname } = useLocation();
 
   const menuItems = [
@@ -13,98 +19,37 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside style={{
-      width: "260px",
-      background: "#ffffff",
-      height: "100vh",
-      position: "sticky",
-      top: 0,
-      display: "flex",
-      flexDirection: "column",
-      padding: "32px 20px",
-      borderRight: "1px solid #e5e7eb"
-    }}>
-      {/* Logo */}
-      <div style={{ marginBottom: "40px", padding: "0 8px" }}>
-        <img 
-          src="/logo.png" 
-          alt="ALS Logo" 
-          style={{ 
-            height: "40px", 
-            width: "auto",
-            display: "block"
-          }}
-        />
+    <div className={`sidebar-shell ${className}`.trim()} {...rest}>
+      <div className="sidebar-header">
+        <img src="/logo.png" alt="ALS Logo" className="sidebar-logo" />
+        {isMobile && (
+          <button type="button" className="sidebar-close-btn" onClick={onClose} aria-label="Cerrar menú">
+            <X size={18} />
+          </button>
+        )}
       </div>
 
-      {/* Menu Label */}
-      <div style={{
-        color: "#9ca3af",
-        fontSize: "11px",
-        fontWeight: "700",
-        textTransform: "uppercase",
-        letterSpacing: "0.8px",
-        padding: "0 12px",
-        marginBottom: "16px"
-      }}>
-        MENU
-      </div>
+      <div className="sidebar-section-label">Menú</div>
 
-      {/* Navigation */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      <nav className="sidebar-nav">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.path);
-          
+
           return (
             <Link
               key={item.path}
               to={item.path}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                padding: "14px 16px",
-                borderRadius: "12px",
-                textDecoration: "none",
-                color: active ? "#111827" : "#6b7280",
-                background: active ? "#f3f4f6" : "transparent",
-                transition: "all 0.2s",
-                fontWeight: active ? "600" : "500",
-                fontSize: "15px",
-                position: "relative"
-              }}
-              onMouseEnter={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = "#f9fafb";
-                  e.currentTarget.style.color = "#111827";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#6b7280";
-                }
-              }}
+              className={`sidebar-link ${active ? "is-active" : ""}`.trim()}
+              onClick={() => onNavigate?.()}
             >
-              {active && (
-                <div style={{
-                  position: "absolute",
-                  left: 0,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  width: "4px",
-                  height: "24px",
-                  background: "#667eea",
-                  borderRadius: "0 4px 4px 0"
-                }} />
-              )}
+              {active && <span className="sidebar-link-indicator" />}
               <Icon size={20} strokeWidth={active ? 2.5 : 2} />
               <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
-    </aside>
+    </div>
   );
 }

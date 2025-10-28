@@ -21,6 +21,8 @@ export default function ResourcesPage() {
   const [editForm, setEditForm] = useState<ResourceUpdate>({});
   // Modal crear
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const isWindow = typeof window !== "undefined";
+  const [isCompactTable, setIsCompactTable] = useState<boolean>(() => (isWindow ? window.innerWidth < 768 : false));
 
   async function load() {
     try {
@@ -31,6 +33,25 @@ export default function ResourcesPage() {
     }
   }
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!isWindow) return;
+    const mql = window.matchMedia("(max-width: 768px)");
+    const handler = (event: MediaQueryListEvent) => setIsCompactTable(event.matches);
+    setIsCompactTable(mql.matches);
+    if (mql.addEventListener) {
+      mql.addEventListener("change", handler);
+    } else {
+      mql.addListener(handler);
+    }
+    return () => {
+      if (mql.removeEventListener) {
+        mql.removeEventListener("change", handler);
+      } else {
+        mql.removeListener(handler);
+      }
+    };
+  }, [isWindow]);
 
   async function onCreate() {
     setLoading(true);
@@ -122,11 +143,11 @@ export default function ResourcesPage() {
   return (
     <DashboardLayout
       title="Recursos"
-      contentStyle={{ padding: "0 40px 32px 40px" }}
+      contentStyle={{ padding: "0 clamp(16px, 4vw, 40px) 32px", width: "100%", maxWidth: "100%" }}
     >
       <div style={{
-        margin: "0 -40px 32px",
-        padding: "20px 40px",
+        margin: "0 calc(-1 * clamp(16px, 4vw, 40px)) 32px",
+        padding: "20px clamp(16px, 4vw, 40px)",
         background: "#ffffff",
         borderBottom: "1px solid #e5e7eb",
         display: "flex",
@@ -135,16 +156,16 @@ export default function ResourcesPage() {
         justifyContent: "space-between",
         alignItems: "center"
       }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "1 1 280px", minWidth: 0 }}>
           <div style={{ color: "#9ca3af", fontSize: 13, display: "flex", gap: 8, alignItems: "center" }}>
             <span>Dashboard</span>
             <ChevronRight size={14} />
             <span>Recursos</span>
           </div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#111827" }}>Inventario de recursos</h1>
-          <p style={{ margin: 0, color: "#6b7280", fontSize: 13 }}>Administra equipos, insumos y personal disponible en la operación.</p>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#111827", maxWidth: "100%", whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "anywhere", lineHeight: 1.25 }}>Inventario de recursos</h1>
+          <p style={{ margin: 0, color: "#6b7280", fontSize: 13, overflowWrap: "anywhere" }}>Administra equipos, insumos y personal disponible en la operación.</p>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", flex: "1 1 220px", minWidth: 0, justifyContent: "flex-end" }}>
           <Button
             variant="secondary"
             onClick={() => {
@@ -164,7 +185,7 @@ export default function ResourcesPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, min(100%, 1fr)))", gap: 16, marginBottom: 24 }}>
         {[
           { label: "Total", value: items.length, icon: Layers, color: "#4f46e5" },
           { label: "Disponibles", value: items.filter((it) => it.available).length, icon: PackageCheck, color: "#16a34a" },
@@ -181,9 +202,11 @@ export default function ResourcesPage() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              gap: 12
+              gap: 12,
+              flex: "1 1 200px",
+              minWidth: 0
             }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
                 <span style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>{card.label}</span>
                 <span style={{ fontSize: 24, fontWeight: 700, color: "#0f172a" }}>{card.value}</span>
               </div>
@@ -216,33 +239,33 @@ export default function ResourcesPage() {
           flexWrap: "wrap",
           gap: 20
         }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "1 1 220px", minWidth: 0 }}>
             <span style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Tipo</span>
             <select
               className="input"
               value={pendingType}
               onChange={(e) => setPendingType(e.target.value)}
-              style={{ minWidth: 220 }}
+              style={{ width: "100%", minWidth: 0 }}
             >
               {Object.entries(typeLabels).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "1 1 220px", minWidth: 0 }}>
             <span style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Disponibilidad</span>
             <select
               className="input"
               value={pendingAvailability}
               onChange={(e) => setPendingAvailability(e.target.value)}
-              style={{ minWidth: 220 }}
+              style={{ width: "100%", minWidth: 0 }}
             >
               {Object.entries(availabilityLabels).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </div>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "flex-end", gap: 10 }}>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
             <Button
               variant="ghost"
               onClick={() => {
@@ -290,13 +313,13 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      <div style={{ background: "#ffffff", borderRadius: 20, border: "1px solid #e5e7eb", padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ background: "#ffffff", borderRadius: 20, border: "1px solid #e5e7eb", padding: 24, display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: "min(100%, 1200px)", margin: "0 auto" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#111827" }}>Listado de recursos</h2>
-            <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#6b7280" }}>{filteredItems.length} recursos encontrados</p>
+          <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#111827", overflowWrap: "anywhere" }}>Listado de recursos</h2>
+            <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#6b7280", overflowWrap: "anywhere" }}>{filteredItems.length} recursos encontrados</p>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end", flex: "1 1 220px" }}>
             <Button variant="secondary" onClick={exportCSV}>Exportar CSV</Button>
           </div>
         </div>
@@ -306,157 +329,304 @@ export default function ResourcesPage() {
             No hay recursos que coincidan con los filtros seleccionados.
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
-              <thead>
-                <tr>
-                  {['Recurso', 'Tipo', 'Cantidad', 'Disponibilidad', 'Ubicación', 'Descripción', 'Acciones'].map((header) => (
-                    <th key={header} style={{ textAlign: header === 'Descripción' ? 'left' : 'center', padding: "12px 16px", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.6, color: "#6b7280", background: "#f1f5f9" }}>{header}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map((it) => (
-                  <tr key={it.id} style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
-                    <td style={{ padding: "14px 16px", fontWeight: 600, color: "#0f172a", minWidth: 180, textAlign: "left" }}>
-                      {editingId === it.id ? (
-                        <input className="input" type="text" value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-                      ) : (
-                        it.name
-                      )}
-                    </td>
-                    <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                      {editingId === it.id ? (
-                        <select className="input" value={editForm.type || it.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}>
-                          <option value="vehiculo">Vehículo</option>
-                          <option value="equipo">Equipo</option>
-                          <option value="personal">Personal</option>
-                          <option value="insumo">Insumo</option>
-                        </select>
-                      ) : (
-                        typeLabels[it.type] || it.type
-                      )}
-                    </td>
-                    <td style={{ padding: "14px 16px", textAlign: "center", minWidth: 100 }}>
-                      {editingId === it.id ? (
-                        <input className="input" type="number" min={0} value={editForm.quantity ?? it.quantity} onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })} />
-                      ) : (
-                        it.quantity
-                      )}
-                    </td>
-                    <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                      {editingId === it.id ? (
-                        <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#475569" }}>
-                          <input type="checkbox" checked={editForm.available ?? it.available} onChange={(e) => setEditForm({ ...editForm, available: e.target.checked })} />
-                          Disponible
-                        </label>
-                      ) : (
-                        it.available ? <span className="badge badge-success">Disponible</span> : <span className="badge badge-danger">Sin stock</span>
-                      )}
-                    </td>
-                    <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                      {editingId === it.id ? (
-                        <input className="input" type="text" value={editForm.location ?? it.location ?? ""} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} style={{ minWidth: 160 }} />
-                      ) : (
-                        it.location || "—"
-                      )}
-                    </td>
-                    <td style={{ padding: "14px 16px", color: "#475569", textAlign: "left", minWidth: 220 }}>
-                      {editingId === it.id ? (
-                        <textarea className="input" value={editForm.description ?? it.description ?? ""} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={2} />
-                      ) : (
-                        it.description || "—"
-                      )}
-                    </td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                        {editingId === it.id ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => saveEdit(it.id)}
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
-                                border: "none",
-                                background: "#22c55e",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "white",
-                                cursor: "pointer",
-                                boxShadow: "0 4px 10px rgba(34,197,94,0.25)"
-                              }}
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={cancelEdit}
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
-                                border: "1px solid #e5e7eb",
-                                background: "#ffffff",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#ef4444",
-                                cursor: "pointer"
-                              }}
-                            >
-                              <X size={16} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => startEdit(it)}
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
-                                border: "1px solid #e5e7eb",
-                                background: "#ffffff",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#1d4ed8",
-                                cursor: "pointer"
-                              }}
-                            >
-                              <PencilLine size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onDelete(it.id)}
-                              style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 12,
-                                border: "1px solid #fee2e2",
-                                background: "#fef2f2",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#dc2626",
-                                cursor: "pointer"
-                              }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
+          isCompactTable ? (
+            <div style={{ display: "grid", gap: 12 }}>
+              {filteredItems.map((it) => (
+                <div key={it.id} style={{ background: "#f8fafc", borderRadius: 16, border: "1px solid #e5e7eb", padding: 18, display: "grid", gap: 12 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Recurso</span>
+                    {editingId === it.id ? (
+                      <input className="input" type="text" value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                    ) : (
+                      <span style={{ fontWeight: 600, color: "#0f172a", overflowWrap: "anywhere" }}>{it.name}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Tipo</span>
+                    {editingId === it.id ? (
+                      <select className="input" value={editForm.type || it.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}>
+                        <option value="vehiculo">Vehículo</option>
+                        <option value="equipo">Equipo</option>
+                        <option value="personal">Personal</option>
+                        <option value="insumo">Insumo</option>
+                      </select>
+                    ) : (
+                      <span style={{ color: "#475569" }}>{typeLabels[it.type] || it.type}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Cantidad</span>
+                    {editingId === it.id ? (
+                      <input className="input" type="number" min={0} value={editForm.quantity ?? it.quantity} onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })} />
+                    ) : (
+                      <span style={{ color: "#0f172a", fontWeight: 600 }}>{it.quantity}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Disponibilidad</span>
+                    {editingId === it.id ? (
+                      <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#475569" }}>
+                        <input type="checkbox" checked={editForm.available ?? it.available} onChange={(e) => setEditForm({ ...editForm, available: e.target.checked })} />
+                        Disponible
+                      </label>
+                    ) : (
+                      it.available ? <span className="badge badge-success">Disponible</span> : <span className="badge badge-danger">Sin stock</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Ubicación</span>
+                    {editingId === it.id ? (
+                      <input className="input" type="text" value={editForm.location ?? it.location ?? ""} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} />
+                    ) : (
+                      <span style={{ color: "#475569", overflowWrap: "anywhere" }}>{it.location || "—"}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Descripción</span>
+                    {editingId === it.id ? (
+                      <textarea className="input" value={editForm.description ?? it.description ?? ""} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={3} />
+                    ) : (
+                      <span style={{ color: "#475569", overflowWrap: "anywhere" }}>{it.description || "—"}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", flexWrap: "wrap" }}>
+                    {editingId === it.id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => saveEdit(it.id)}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 12,
+                            border: "none",
+                            background: "#22c55e",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            cursor: "pointer",
+                            boxShadow: "0 4px 10px rgba(34,197,94,0.25)"
+                          }}
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEdit}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 12,
+                            border: "1px solid #e5e7eb",
+                            background: "#ffffff",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#ef4444",
+                            cursor: "pointer"
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(it)}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 12,
+                            border: "1px solid #e5e7eb",
+                            background: "#ffffff",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#1d4ed8",
+                            cursor: "pointer"
+                          }}
+                        >
+                          <PencilLine size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(it.id)}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 12,
+                            border: "1px solid #fee2e2",
+                            background: "#fef2f2",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#dc2626",
+                            cursor: "pointer"
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+                <thead>
+                  <tr>
+                    {['Recurso', 'Tipo', 'Cantidad', 'Disponibilidad', 'Ubicación', 'Descripción', 'Acciones'].map((header) => (
+                      <th key={header} style={{ textAlign: header === 'Descripción' ? 'left' : 'center', padding: "12px 16px", fontSize: 12, textTransform: "uppercase", letterSpacing: 0.6, color: "#6b7280", background: "#f1f5f9" }}>{header}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredItems.map((it) => (
+                    <tr key={it.id} style={{ borderBottom: "1px solid #e5e7eb", background: "#ffffff" }}>
+                      <td style={{ padding: "14px 16px", fontWeight: 600, color: "#0f172a", minWidth: 180, textAlign: "left", overflowWrap: "anywhere" }}>
+                        {editingId === it.id ? (
+                          <input className="input" type="text" value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                        ) : (
+                          it.name
+                        )}
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "center", whiteSpace: "nowrap" }}>
+                        {editingId === it.id ? (
+                          <select className="input" value={editForm.type || it.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}>
+                            <option value="vehiculo">Vehículo</option>
+                            <option value="equipo">Equipo</option>
+                            <option value="personal">Personal</option>
+                            <option value="insumo">Insumo</option>
+                          </select>
+                        ) : (
+                          typeLabels[it.type] || it.type
+                        )}
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "center", minWidth: 100 }}>
+                        {editingId === it.id ? (
+                          <input className="input" type="number" min={0} value={editForm.quantity ?? it.quantity} onChange={(e) => setEditForm({ ...editForm, quantity: Number(e.target.value) })} />
+                        ) : (
+                          it.quantity
+                        )}
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                        {editingId === it.id ? (
+                          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#475569" }}>
+                            <input type="checkbox" checked={editForm.available ?? it.available} onChange={(e) => setEditForm({ ...editForm, available: e.target.checked })} />
+                            Disponible
+                          </label>
+                        ) : (
+                          it.available ? <span className="badge badge-success">Disponible</span> : <span className="badge badge-danger">Sin stock</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                        {editingId === it.id ? (
+                          <input className="input" type="text" value={editForm.location ?? it.location ?? ""} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} style={{ minWidth: 160 }} />
+                        ) : (
+                          it.location || "—"
+                        )}
+                      </td>
+                      <td style={{ padding: "14px 16px", color: "#475569", textAlign: "left", minWidth: 220 }}>
+                        {editingId === it.id ? (
+                          <textarea className="input" value={editForm.description ?? it.description ?? ""} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={2} />
+                        ) : (
+                          it.description || "—"
+                        )}
+                      </td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                          {editingId === it.id ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => saveEdit(it.id)}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 12,
+                                  border: "none",
+                                  background: "#22c55e",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "white",
+                                  cursor: "pointer",
+                                  boxShadow: "0 4px 10px rgba(34,197,94,0.25)"
+                                }}
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEdit}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 12,
+                                  border: "1px solid #e5e7eb",
+                                  background: "#ffffff",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#ef4444",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                <X size={16} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => startEdit(it)}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 12,
+                                  border: "1px solid #e5e7eb",
+                                  background: "#ffffff",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#1d4ed8",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                <PencilLine size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onDelete(it.id)}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 12,
+                                  border: "1px solid #fee2e2",
+                                  background: "#fef2f2",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#dc2626",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </div>
 
@@ -471,7 +641,7 @@ export default function ResourcesPage() {
           </>
         }
       >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           <div>
             <label className="label">Nombre</label>
             <input className="input" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />

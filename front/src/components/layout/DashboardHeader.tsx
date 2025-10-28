@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Bell, Settings, ArrowRight } from "lucide-react";
+import { Search, Bell, Settings, ArrowRight, Menu } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Modal from "../ui/Modal";
@@ -7,9 +7,11 @@ import Modal from "../ui/Modal";
 interface Props {
   title: string;
   actions?: React.ReactNode;
+  showSidebarToggle?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export default function DashboardHeader({ title, actions }: Props) {
+export default function DashboardHeader({ title, actions, showSidebarToggle = false, onToggleSidebar }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -73,136 +75,50 @@ export default function DashboardHeader({ title, actions }: Props) {
   }
   
   return (
-    <div style={{
-      background: "white",
-      borderBottom: "1px solid #e5e7eb",
-      padding: "16px 32px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      position: "sticky",
-      top: 0,
-      zIndex: 10,
-      gap: "24px"
-    }}>
-      {/* Left: Search */}
-      <div style={{ flex: 1, maxWidth: 420 }}>
-        <div style={{
-          position: "relative",
-          width: "100%"
-        }}>
-          <Search 
-            size={18} 
-            style={{
-              position: "absolute",
-              left: "12px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#9ca3af"
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Search (⌘ + F)"
-            style={{
-              width: "100%",
-              padding: "10px 12px 10px 40px",
-              border: "1px solid #e5e7eb",
-              borderRadius: "10px",
-              fontSize: "14px",
-              outline: "none",
-              transition: "all 0.2s",
-              cursor: "pointer"
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "#667eea";
-              openSearchModal();
-            }}
-            onBlur={(e) => (e.target.style.borderColor = "#e5e7eb")}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              openSearchModal();
-            }}
-            readOnly
-            ref={searchInputRef}
-          />
-        </div>
+    <header className="dashboard-header">
+      <div className="dashboard-header-left">
+        {showSidebarToggle && (
+          <button type="button" className="dashboard-header-toggle" onClick={onToggleSidebar} aria-label="Abrir menú">
+            <Menu size={18} />
+          </button>
+        )}
+        <h1 className="dashboard-header-title">{title}</h1>
+        {actions && <div className="dashboard-header-actions">{actions}</div>}
       </div>
 
-      {/* Right: Icons, User, Optional actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <button style={{
-          width: "40px",
-          height: "40px",
-          borderRadius: "10px",
-          border: "none",
-          background: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "all 0.2s"
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
-        onMouseLeave={(e) => e.currentTarget.style.background = "white"}
-        >
-          <Bell size={18} color="#6b7280" />
-        </button>
+      <div className="dashboard-header-search">
+        <Search size={18} className="dashboard-header-search-icon" />
+        <input
+          type="text"
+          placeholder="Buscar (⌘ + F)"
+          className="dashboard-header-search-input"
+          readOnly
+          ref={searchInputRef}
+          onFocus={openSearchModal}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            openSearchModal();
+          }}
+        />
+      </div>
 
-        <button style={{
-          width: "40px",
-          height: "40px",
-          borderRadius: "10px",
-          border: "none",
-          background: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "all 0.2s"
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
-        onMouseLeave={(e) => e.currentTarget.style.background = "white"}
-        >
-          <Settings size={18} color="#6b7280" />
+      <div className="dashboard-header-right">
+        <button type="button" className="dashboard-header-icon" aria-label="Notificaciones">
+          <Bell size={18} />
         </button>
-
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          padding: "6px 12px 6px 6px",
-          border: "none",
-          borderRadius: "12px",
-          cursor: "pointer",
-          background: "white"
-        }}>
-          <div style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "10px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontWeight: "600",
-            fontSize: "14px"
-          }}>
+        <button type="button" className="dashboard-header-icon" aria-label="Configuración">
+          <Settings size={18} />
+        </button>
+        <div className="dashboard-header-user">
+          <div className="dashboard-header-avatar">
             {user?.full_name ? user.full_name.charAt(0).toUpperCase() : user?.email.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: "600", color: "#111827" }}>
-              {user?.full_name || user?.email.split('@')[0]}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              UI/UX Designer
-            </div>
+          <div className="dashboard-header-user-info">
+            <span>{user?.full_name || user?.email.split("@")[0]}</span>
+            <small>UI/UX Designer</small>
           </div>
         </div>
       </div>
-
-      {actions && <div>{actions}</div>}
 
       <Modal
         open={isSearchOpen}
@@ -252,6 +168,6 @@ export default function DashboardHeader({ title, actions }: Props) {
           </div>
         </form>
       </Modal>
-    </div>
+    </header>
   );
 }

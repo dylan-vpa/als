@@ -195,111 +195,62 @@ export default function OitListPage() {
 
   return (
     <DashboardLayout title="OITs">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: "#111827" }}>Panel de OITs</h1>
-          <p style={{ margin: "4px 0 0 0", color: "#6b7280", fontSize: 14 }}>
-            Visualiza el progreso de las órdenes internas de trabajo y toma decisiones informadas.
-          </p>
+      <div className="oit-page">
+        <div className="oit-toolbar">
+          <div className="oit-toolbar__copy">
+            <h1>Panel de OITs</h1>
+            <p>Visualiza el progreso de las órdenes internas de trabajo y toma decisiones informadas.</p>
+          </div>
+          <div className="oit-toolbar__actions">
+            <Button
+              variant="secondary"
+              className="oit-toolbar__filter-btn"
+              onClick={() => {
+                if (!filterOpen) {
+                  setPendingFilterType(filterType);
+                  setPendingFilterStatus(filterStatus);
+                  setFilterOpen(true);
+                } else {
+                  setFilterOpen(false);
+                }
+              }}
+              aria-label="Abrir filtros"
+            >
+              <SlidersHorizontal size={18} />
+            </Button>
+            <Button
+              variant="primary"
+              className="oit-toolbar__upload-btn"
+              onClick={() => setOpenUpload(true)}
+            >
+              <FilePlus size={16} /> Subir OIT
+            </Button>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              if (!filterOpen) {
-                setPendingFilterType(filterType);
-                setPendingFilterStatus(filterStatus);
-                setFilterOpen(true);
-              } else {
-                setFilterOpen(false);
-              }
-            }}
-            aria-label="Abrir filtros"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              padding: 0,
-              fontSize: 13,
-              color: "#1f2937",
-              borderColor: "#e5e7eb",
-              background: "#f9fafb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            <SlidersHorizontal size={18} />
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => setOpenUpload(true)}
-            style={{ background: "#1e3a8a", borderColor: "#1e3a8a", color: "white" }}
-          >
-            <FilePlus size={16} /> Subir OIT
-          </Button>
-        </div>
-      </div>
 
-      {filterOpen && (
-        <div style={{ background: "#ffffff", border: "1px solid #d1d5db", borderRadius: 18, padding: 20, marginBottom: 24, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)", display: "flex", flexWrap: "wrap", gap: 20 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>Tipo de documento</span>
-            <div ref={typeDropdownRef} style={{ position: "relative", minWidth: 200 }}>
+        {filterOpen && (
+          <div className="oit-filter-panel">
+            <div className="oit-filter-field" ref={typeDropdownRef}>
+              <span>Tipo de documento</span>
               <button
                 type="button"
+                className="oit-filter-field__trigger"
                 onClick={() => setTypeDropdownOpen((prev) => !prev)}
-                style={{
-                  width: "100%",
-                  background: "#ffffff",
-                  border: "1px solid #d1d5db",
-                  borderRadius: 12,
-                  padding: "12px 14px",
-                  fontSize: 13,
-                  color: "#111827",
-                  textAlign: "left",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(15, 23, 42, 0.05)"
-                }}
               >
                 {typeLabels[pendingFilterType] ?? "Seleccionar"}
-                <span style={{ fontSize: 14, color: "#9ca3af" }}>▾</span>
+                <span className="oit-filter-field__chevron">▾</span>
               </button>
               {typeDropdownOpen && (
-                <div style={{
-                  position: "absolute",
-                  top: "calc(100% + 8px)",
-                  left: 0,
-                  right: 0,
-                  background: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 14,
-                  boxShadow: "0 12px 30px rgba(15, 23, 42, 0.15)",
-                  zIndex: 10,
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden"
-                }}>
+                <div className="oit-filter-field__menu">
                   {Object.entries(typeLabels).map(([value, label]) => (
                     <button
                       key={value}
                       type="button"
+                      className={`oit-filter-field__option ${value === pendingFilterType ? "is-active" : ""}`.trim()}
                       onClick={() => {
                         setPendingFilterType(value);
                         setTypeDropdownOpen(false);
                       }}
-                      style={{
-                        padding: "10px 14px",
-                        textAlign: "left",
-                        fontSize: 13,
-                        background: value === pendingFilterType ? "#eef2ff" : "#ffffff",
-                        color: value === pendingFilterType ? "#4338ca" : "#111827",
-                        border: "none",
-                        cursor: "pointer"
-                      }}
                     >
                       {label}
                     </button>
@@ -307,63 +258,27 @@ export default function OitListPage() {
                 </div>
               )}
             </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 12, color: "#6b7280" }}>Estado</span>
-            <div ref={statusDropdownRef} style={{ position: "relative", minWidth: 200 }}>
+
+            <div className="oit-filter-field" ref={statusDropdownRef}>
+              <span>Estado</span>
               <button
                 type="button"
+                className="oit-filter-field__trigger"
                 onClick={() => setStatusDropdownOpen((prev) => !prev)}
-                style={{
-                  width: "100%",
-                  background: "#ffffff",
-                  border: "1px solid #d1d5db",
-                  borderRadius: 12,
-                  padding: "12px 14px",
-                  fontSize: 13,
-                  color: "#111827",
-                  textAlign: "left",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 2px rgba(15, 23, 42, 0.05)"
-                }}
               >
                 {statusLabels[pendingFilterStatus] ?? "Seleccionar"}
-                <span style={{ fontSize: 14, color: "#9ca3af" }}>▾</span>
+                <span className="oit-filter-field__chevron">▾</span>
               </button>
               {statusDropdownOpen && (
-                <div style={{
-                  position: "absolute",
-                  top: "calc(100% + 8px)",
-                  left: 0,
-                  right: 0,
-                  background: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 14,
-                  boxShadow: "0 12px 30px rgba(15, 23, 42, 0.15)",
-                  zIndex: 10,
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden"
-                }}>
+                <div className="oit-filter-field__menu">
                   {Object.entries(statusLabels).map(([value, label]) => (
                     <button
                       key={value}
                       type="button"
+                      className={`oit-filter-field__option ${value === pendingFilterStatus ? "is-active" : ""}`.trim()}
                       onClick={() => {
                         setPendingFilterStatus(value);
                         setStatusDropdownOpen(false);
-                      }}
-                      style={{
-                        padding: "10px 14px",
-                        textAlign: "left",
-                        fontSize: 13,
-                        background: value === pendingFilterStatus ? "#fee2e2" : "#ffffff",
-                        color: value === pendingFilterStatus ? "#b91c1c" : "#111827",
-                        border: "none",
-                        cursor: "pointer"
                       }}
                     >
                       {label}
@@ -372,211 +287,119 @@ export default function OitListPage() {
                 </div>
               )}
             </div>
-          </div>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "flex-end", gap: 8 }}>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setFilterType("todos");
-                setFilterStatus("todos");
-                setPendingFilterType("todos");
-                setPendingFilterStatus("todos");
-                setFilterOpen(false);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button variant="primary" onClick={() => { setFilterType(pendingFilterType); setFilterStatus(pendingFilterStatus); setFilterOpen(false); }}>Aplicar</Button>
-          </div>
-        </div>
-      )}
 
-      {(filterType !== "todos" || filterStatus !== "todos") && (
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
-          {filterType !== "todos" && (
-            <button
-              type="button"
-              onClick={() => { setFilterType("todos"); if (filterOpen) setPendingFilterType("todos"); }}
-              style={{
-                border: "none",
-                background: "#eef2ff",
-                color: "#4338ca",
-                padding: "6px 12px",
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer"
-              }}
-            >
-              Tipo: {filterType} ✕
-            </button>
-          )}
-          {filterStatus !== "todos" && (
-            <button
-              type="button"
-              onClick={() => { setFilterStatus("todos"); if (filterOpen) setPendingFilterStatus("todos"); }}
-              style={{
-                border: "none",
-                background: "#dbeafe",
-                color: "#1d4ed8",
-                padding: "6px 12px",
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer"
-              }}
-            >
-              Estado: {statusLabels[filterStatus] ?? filterStatus} ✕
-            </button>
-          )}
-        </div>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 18, marginBottom: 32 }}>
-        {statCards.map((card) => {
-          const IconComponent = card.icon;
-          return (
-            <div
-              key={card.label}
-              style={{
-                background: "#ffffff",
-                borderRadius: 24,
-                padding: "20px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 16,
-                border: "1px solid #e5e7eb"
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <span style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>{card.caption}</span>
-                <span style={{ fontSize: 24, fontWeight: 700, color: "#0f172a" }}>{card.value}</span>
-                <span style={{ fontSize: 13, color: "#6b7280" }}>{card.label}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: card.accent }}>{card.badge}</span>
-              </div>
-              <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                background: `conic-gradient(${card.accent} ${card.progress}%, #e5e7eb ${card.progress}% 100%)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "1px solid #f3f4f6"
-                }}>
-                  <IconComponent size={16} color={card.accent} />
-                </div>
-              </div>
+            <div className="oit-filter-actions">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setFilterType("todos");
+                  setFilterStatus("todos");
+                  setPendingFilterType("todos");
+                  setPendingFilterStatus("todos");
+                  setFilterOpen(false);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={() => { setFilterType(pendingFilterType); setFilterStatus(pendingFilterStatus); setFilterOpen(false); }}>Aplicar</Button>
             </div>
-          );
-        })}
-      </div>
-
-      <div style={{ background: "#ffffff", borderRadius: 20, border: "1px solid #e5e7eb", padding: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: "#111827" }}>Listado de OITs</h2>
-            <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#6b7280" }}>Tus documentos más recientes y su estado actual.</p>
-          </div>
-        </div>
-        {loading ? (
-          <div style={{ padding: 32, textAlign: "center", color: "#6b7280" }}>Cargando…</div>
-        ) : error ? (
-          <div className="error">{error}</div>
-        ) : filteredItems.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", color: "#6b7280" }}>No hay OITs cargadas aún.</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {filteredItems.map((i) => {
-              const statusBadge = (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "6px 12px",
-                    borderRadius: 999,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    background:
-                      i.status === "check"
-                        ? "rgba(34,197,94,0.12)"
-                        : i.status === "alerta"
-                        ? "rgba(249,115,22,0.12)"
-                        : "rgba(239,68,68,0.12)",
-                    color:
-                      i.status === "check"
-                        ? "#16a34a"
-                        : i.status === "alerta"
-                        ? "#f97316"
-                        : "#dc2626"
-                  }}
-                >
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "currentColor" }}></span>
-                  {i.status === "check" ? "Completada" : i.status === "alerta" ? "Alerta" : "Error"}
-                </span>
-              );
-              const initials = (i.original_name || i.filename || "").slice(0, 1).toUpperCase();
-              return (
-                <div
-                  key={i.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(0, 1.6fr) minmax(0, 1fr) 140px 120px",
-                    alignItems: "center",
-                    background: "#f8fafc",
-                    borderRadius: 20,
-                    padding: "18px 20px",
-                    border: "1px solid #eef2f7"
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 14,
-                        background: "#e0e7ff",
-                        color: "#1e3a8a",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 700
-                      }}
-                    >
-                      {initials || "O"}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{i.original_name || i.filename}</span>
-                      <span style={{ fontSize: 12, color: "#6b7280" }}>ID #{i.id}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 13, color: "#6b7280" }}>{new Date(i.created_at).toLocaleString()}</div>
-                  <div>{statusBadge}</div>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Link className="btn btn-secondary" to={`/dashboard/oit/${i.id}`} style={{ borderRadius: 999, fontSize: 13 }}>
-                      Ver detalle
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
-      </div>
 
-      <div style={{ marginTop: 20, fontSize: 12, color: "#6b7280" }}>
-        Última sincronización: {stats.lastUpdated || "Sin registros"}
+        {(filterType !== "todos" || filterStatus !== "todos") && (
+          <div className="oit-active-filters">
+            {filterType !== "todos" && (
+              <button
+                type="button"
+                className="oit-chip oit-chip--type"
+                onClick={() => { setFilterType("todos"); if (filterOpen) setPendingFilterType("todos"); }}
+              >
+                Tipo: {filterType} ✕
+              </button>
+            )}
+            {filterStatus !== "todos" && (
+              <button
+                type="button"
+                className="oit-chip oit-chip--status"
+                onClick={() => { setFilterStatus("todos"); if (filterOpen) setPendingFilterStatus("todos"); }}
+              >
+                Estado: {statusLabels[filterStatus] ?? filterStatus} ✕
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="oit-stats-grid">
+          {statCards.map((card) => {
+            const IconComponent = card.icon;
+            return (
+              <div key={card.label} className="oit-stats-card">
+                <div className="oit-stats-card__info">
+                  <span className="oit-stats-card__caption">{card.caption}</span>
+                  <span className="oit-stats-card__value">{card.value}</span>
+                  <span className="oit-stats-card__label">{card.label}</span>
+                  <span className="oit-stats-card__badge" style={{ color: card.accent }}>{card.badge}</span>
+                </div>
+                <div
+                  className="oit-stats-card__meter"
+                  style={{ background: `conic-gradient(${card.accent} ${card.progress}%, #e5e7eb ${card.progress}% 100%)` }}
+                >
+                  <div className="oit-stats-card__meter-inner">
+                    <IconComponent size={16} color={card.accent} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="oit-list-wrapper">
+          <div className="oit-list-header">
+            <div>
+              <h2>Listado de OITs</h2>
+              <p>Tus documentos más recientes y su estado actual.</p>
+            </div>
+          </div>
+          {loading ? (
+            <div className="oit-placeholder">Cargando…</div>
+          ) : error ? (
+            <div className="error">{error}</div>
+          ) : filteredItems.length === 0 ? (
+            <div className="oit-placeholder">No hay OITs cargadas aún.</div>
+          ) : (
+            <div className="oit-list">
+              {filteredItems.map((i) => {
+                const statusClass = `oit-status-badge oit-status-badge--${i.status}`;
+                const initials = (i.original_name || i.filename || "").slice(0, 1).toUpperCase();
+                return (
+                  <div key={i.id} className="oit-item">
+                    <div className="oit-item__meta">
+                      <div className="oit-item__avatar">{initials || "O"}</div>
+                      <div className="oit-item__details">
+                        <span className="oit-item__title">{i.original_name || i.filename}</span>
+                        <span className="oit-item__subtitle">ID #{i.id}</span>
+                      </div>
+                    </div>
+                    <div className="oit-item__date">{new Date(i.created_at).toLocaleString()}</div>
+                    <div className="oit-item__status">
+                      <span className={statusClass}>
+                        <span className="oit-status-badge__dot" />
+                        {i.status === "check" ? "Completada" : i.status === "alerta" ? "Alerta" : "Error"}
+                      </span>
+                    </div>
+                    <div className="oit-item__cta">
+                      <Link className="btn btn-secondary" to={`/dashboard/oit/${i.id}`}>
+                        Ver detalle
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="oit-sync">Última sincronización: {stats.lastUpdated || "Sin registros"}</div>
       </div>
 
       <Modal
