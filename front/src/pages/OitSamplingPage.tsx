@@ -4,7 +4,8 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import SamplingWizard, { SamplingData } from "../components/oit/SamplingWizard";
 import { apiClient, OitDocumentOut } from "../services/api";
 import Button from "../components/ui/Button";
-import { ChevronLeft, ClipboardList, Save } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+import OitSamplingHeader from "../components/oit/sampling/OitSamplingHeader";
 
 export default function OitSamplingPage() {
   const { id } = useParams();
@@ -58,41 +59,14 @@ export default function OitSamplingPage() {
       title="Muestreo OIT"
       contentStyle={{ padding: "0 clamp(16px, 4vw, 40px) 32px", width: "100%", maxWidth: "100%" }}
     >
-      <div
-        style={{
-          margin: "0 calc(-1 * clamp(16px, 4vw, 40px)) 32px",
-          padding: "20px clamp(16px, 4vw, 40px)",
-          background: "#ffffff",
-          borderBottom: "1px solid #e5e7eb",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-            <div style={{ color: "#9ca3af", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-              <span>OIT #{id}</span>
-              <span>·</span>
-              <span>Formulario de muestreo</span>
-            </div>
-            <h1 style={{ margin: "6px 0 0 0", fontSize: 26, fontWeight: 700, color: "#111827", maxWidth: "100%", whiteSpace: "normal", wordBreak: "break-word", overflowWrap: "anywhere", lineHeight: 1.25 }}>
-              {doc?.original_name || doc?.filename || "Sin título"}
-            </h1>
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Button variant="secondary" onClick={handleReset} disabled={!sampling}>
-              <ClipboardList size={16} /> Reiniciar
-            </Button>
-            <Button variant="primary" onClick={() => sampling && handleComplete(sampling)} disabled={saving || !sampling}>
-              <Save size={16} /> Guardar cambios
-            </Button>
-          </div>
-        </div>
-        <p style={{ margin: 0, fontSize: 13, color: "#6b7280", overflowWrap: "anywhere" }}>
-          Completa la información de muestreo para habilitar la descarga del informe final en la vista detallada.
-        </p>
-      </div>
+      <OitSamplingHeader
+        oitId={id}
+        documentTitle={doc?.original_name || doc?.filename || "Sin título"}
+        canReset={!!sampling}
+        saving={saving}
+        onReset={handleReset}
+        onSave={() => sampling && handleComplete(sampling)}
+      />
 
       <div style={{ background: "#ffffff", borderRadius: 20, border: "1px solid #e5e7eb", padding: 24, width: "100%", maxWidth: "min(100%, 960px)", margin: "0 auto" }}>
         <SamplingWizard

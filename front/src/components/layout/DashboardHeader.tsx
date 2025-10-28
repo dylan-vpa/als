@@ -115,7 +115,7 @@ export default function DashboardHeader({ title, actions, showSidebarToggle = fa
           </div>
           <div className="dashboard-header-user-info">
             <span>{user?.full_name || user?.email.split("@")[0]}</span>
-            <small>UI/UX Designer</small>
+            <small>Serambiente</small>
           </div>
         </div>
       </div>
