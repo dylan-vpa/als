@@ -1,0 +1,6 @@
+﻿OIT Prueba
+identificador: OIT-123
+fecha: 2025-10-21
+alcance: pruebas de integración
+requisitos: checklist
+firmas: Responsable de IT
