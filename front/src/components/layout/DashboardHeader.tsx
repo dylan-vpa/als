@@ -3,6 +3,7 @@ import { Search, Bell, Settings, ArrowRight, Menu } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Modal from "../ui/Modal";
+import { useNotifications } from "../../contexts/NotificationsContext";
 
 interface Props {
   title: string;
@@ -18,6 +19,7 @@ export default function DashboardHeader({ title, actions, showSidebarToggle = fa
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const modalInputRef = useRef<HTMLInputElement | null>(null);
+  const { unreadCount, permission, requestPermission } = useNotifications();
 
   const quickLinks = useMemo(() => [
     { label: "OITs", path: "/dashboard/oit" },
@@ -73,6 +75,13 @@ export default function DashboardHeader({ title, actions, showSidebarToggle = fa
       handleNavigate(filteredLinks[0].path);
     }
   }
+
+  async function handleNotificationsClick() {
+    if (permission === "default") {
+      await requestPermission();
+    }
+    navigate("/dashboard/alerts");
+  }
   
   return (
     <header className="dashboard-header">
@@ -103,8 +112,34 @@ export default function DashboardHeader({ title, actions, showSidebarToggle = fa
       </div>
 
       <div className="dashboard-header-right">
-        <button type="button" className="dashboard-header-icon" aria-label="Notificaciones">
+        <button
+          type="button"
+          className="dashboard-header-icon"
+          aria-label="Notificaciones"
+          onClick={handleNotificationsClick}
+          style={{ position: "relative" }}
+        >
           <Bell size={18} />
+          {unreadCount > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: -4,
+                right: -4,
+                background: "#ef4444",
+                color: "white",
+                borderRadius: "999px",
+                padding: "0 6px",
+                fontSize: 10,
+                fontWeight: 700,
+                lineHeight: "16px",
+                minWidth: 16,
+                textAlign: "center",
+              }}
+            >
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </button>
         <button type="button" className="dashboard-header-icon" aria-label="Configuración">
           <Settings size={18} />

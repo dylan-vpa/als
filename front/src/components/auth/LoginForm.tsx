@@ -43,12 +43,12 @@ export default function LoginForm() {
   return (
     <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div>
-        <label style={labelStyle}>Email</label>
+        <label style={labelStyle}>Correo electrónico</label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="alex@example.com"
+          placeholder="usuario@empresa.com"
           required
           style={inputStyle}
           onFocus={(e) => e.target.style.borderColor = "#2563eb"}
@@ -57,12 +57,12 @@ export default function LoginForm() {
       </div>
 
       <div>
-        <label style={labelStyle}>Password</label>
+        <label style={labelStyle}>Contraseña</label>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••••"
+          placeholder="Ingresa tu contraseña"
           required
           style={inputStyle}
           onFocus={(e) => e.target.style.borderColor = "#2563eb"}
@@ -102,7 +102,7 @@ export default function LoginForm() {
         onMouseEnter={(e) => !loading && (e.currentTarget.style.background = "#1d4ed8")}
         onMouseLeave={(e) => !loading && (e.currentTarget.style.background = "#2563eb")}
       >
-        {loading ? "Logging in..." : "LOG IN"}
+        {loading ? "Iniciando..." : "Iniciar sesión"}
       </button>
     </form>
   );

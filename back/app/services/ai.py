@@ -4,6 +4,7 @@ try:
     import requests  # type: ignore
 except Exception:
     requests = None  # type: ignore
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Literal
 
@@ -31,11 +32,27 @@ class OitAiService:
         
     def get_available_models(self) -> List[Dict]:
         """Obtiene la lista de modelos disponibles en el servidor Ollama"""
+        url = f"{self.base_url}/api/tags"
         try:
-            url = f"{self.base_url}/api/tags"
-            data = self._post_json(url, {}, timeout=10)
-            models = data.get("models", [])
-            return models
+            if requests is not None:  # type: ignore
+                resp = requests.get(url, timeout=10)  # type: ignore
+                resp.raise_for_status()
+                data = resp.json()
+            else:
+                from urllib.request import Request, urlopen
+                from urllib.error import URLError, HTTPError
+                import ssl
+
+                req = Request(url)
+                ctx = ssl.create_default_context()
+                with urlopen(req, timeout=10, context=ctx) as resp:  # type: ignore
+                    body = resp.read().decode("utf-8", errors="ignore")
+                try:
+                    data = json.loads(body) if body else {}
+                except Exception:
+                    data = {}
+            models = data.get("models") or data.get("tags") or []
+            return models if isinstance(models, list) else []
         except Exception as e:
             logger.warning(f"Error al obtener modelos disponibles: {e}")
             return []
@@ -48,7 +65,14 @@ class OitAiService:
         model = model_name or self.model
         try:
             models = self.get_available_models()
-            return any(m.get("name") == model for m in models)
+            for m in models:
+                if isinstance(m, dict):
+                    name = m.get("name") or m.get("model")
+                else:
+                    name = str(m)
+                if name == model:
+                    return True
+            return False
         except Exception:
             return False
 
@@ -81,7 +105,8 @@ class OitAiService:
             "summary": summary,
             "alerts": alerts,
             "missing": missing,
-            "evidence": evidence
+            "evidence": evidence,
+            "notes": summary if missing else ""
         }
 
     def _post_json(self, url: str, payload: Dict, timeout: int = 90) -> Dict:
@@ -175,6 +200,7 @@ class OitAiService:
                 return v if isinstance(v, list) else ([] if v is None else [str(v)])
             parsed.setdefault("status", "error")
             parsed.setdefault("summary", "")
+            parsed.setdefault("notes", parsed.get("summary", ""))
             parsed["alerts"] = _ensure_list(parsed.get("alerts"))
             parsed["missing"] = _ensure_list(parsed.get("missing"))
             parsed["evidence"] = _ensure_list(parsed.get("evidence"))
@@ -334,10 +360,11 @@ class OitAiService:
         """Método de compatibilidad que llama a check_document con el modelo por defecto"""
         return self.check_document(document_text, reference_text)
 
-    def recommend_resources(self, document_text: str) -> List[Dict]:
-        """Devuelve recomendaciones de recursos basadas en heurísticas simples del texto."""
+    def recommend_resources(self, document_text: str) -> Dict[str, object]:
+        """Devuelve recomendaciones de recursos y una sugerencia de programación basadas en heurísticas simples del texto."""
         text = (document_text or "").lower()
         recs: List[Dict] = []
+
         def add(type_: str, name: str, quantity: int, reason: str):
             recs.append({
                 "type": type_,
@@ -345,6 +372,7 @@ class OitAiService:
                 "quantity": quantity,
                 "reason": reason
             })
+
         # Heurísticas
         if any(k in text for k in ["campo", "terreno", "sitio", "mina", "pozo"]):
             add("vehiculo", "Camioneta 4x4", 1, "Desplazamiento al sitio de trabajo")
@@ -360,13 +388,40 @@ class OitAiService:
             add("personal", "Técnico de muestreo", 2, "Ejecución y registro del muestreo")
         # Siempre ofrecer supervisor si el documento está en estado operativo
         add("personal", "Supervisor", 1, "Coordinación general y calidad")
+
         # Dedup por (type,name)
-        unique = {}
+        unique: Dict[tuple[str, str], Dict] = {}
         for r in recs:
-            key = (r["type"], r["name"]) 
+            key = (r["type"], r["name"])
             if key not in unique:
                 unique[key] = r
-        return list(unique.values())
+
+        # Sugerencia de programación
+        urgency_keywords = ["urgente", "emergencia", "prioritario", "prioritaria", "inmediato", "inmediata"]
+        night_keywords = ["nocturn", "turno noche", "noche", "nocturna"]
+        has_urgency = any(word in text for word in urgency_keywords)
+        has_night = any(word in text for word in night_keywords)
+
+        base_days = 3 if has_urgency else 7
+        suggested_date = (datetime.utcnow() + timedelta(days=base_days)).date().isoformat()
+        suggested_time = "20:00" if has_night else "09:00"
+
+        schedule = {
+            "suggested_date": suggested_date,
+            "suggested_time": suggested_time,
+            "justification": (
+                "Programación acelerada por palabras clave de urgencia." if has_urgency
+                else "Programación estándar sugerida a una semana vista."
+            )
+        }
+
+        if has_night:
+            schedule["justification"] += " Se sugirió horario nocturno por el contexto del documento."
+
+        return {
+            "recommendations": list(unique.values()),
+            "schedule": schedule
+        }
 
 
 def extract_text(file_path: Path) -> str:

@@ -1,4 +1,6 @@
 /* Reset y variables CSS */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
 * {
   margin: 0;
   padding: 0;
@@ -26,8 +28,8 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --radius: 0.5rem;
   --radius-lg: 1rem;
-  --sidebar-width: 260px;
-  --header-height: 72px;
+  --sidebar-width: 220px;
+  --header-height: 60px;
   --content-max-width: 1280px;
 }
 
@@ -291,17 +293,22 @@ body {
   display: flex;
   min-height: 100vh;
   background: var(--bg-secondary);
+  padding-left: var(--sidebar-width);
+  position: relative;
 }
 
 .dashboard-sidebar {
   width: var(--sidebar-width);
   background: #ffffff;
   border-right: 1px solid var(--border);
-  min-height: 100vh;
-  position: sticky;
+  height: 100vh;
+  position: fixed;
   top: 0;
+  left: 0;
+  overflow-y: auto;
   transition: transform 0.3s ease;
   z-index: 30;
+  scrollbar-gutter: stable;
 }
 
 .dashboard-sidebar--mobile {
@@ -327,15 +334,28 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
 }
 
 .dashboard-content {
   flex: 1;
-  padding: clamp(24px, 4vw, 48px);
-  overflow: visible;
+  padding: var(--header-height) clamp(20px, 3.5vw, 36px) clamp(20px, 3.5vw, 36px);
+  overflow-y: auto;
   max-width: var(--content-max-width);
   margin: 0 auto;
   width: 100%;
+}
+
+.dashboard-subheader {
+  position: sticky;
+  z-index: 18;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-subheader--wide {
+  margin: 0 calc(-1 * clamp(16px, 4vw, 40px)) 32px;
+  padding: 20px clamp(16px, 4vw, 40px);
 }
 
 .dashboard-header {
@@ -344,10 +364,10 @@ body {
   z-index: 20;
   background: #ffffff;
   border-bottom: 1px solid var(--border);
-  padding: clamp(16px, 3vw, 24px) clamp(24px, 4vw, 40px);
+  padding: clamp(12px, 2.5vw, 18px) clamp(20px, 3.5vw, 32px);
   display: flex;
   align-items: center;
-  gap: clamp(12px, 3vw, 24px);
+  gap: clamp(8px, 2.5vw, 16px);
   flex-wrap: wrap;
 }
 
@@ -359,7 +379,7 @@ body {
 }
 
 .dashboard-header-title {
-  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -373,9 +393,9 @@ body {
 .dashboard-header-toggle {
   border: 1px solid var(--border);
   background: #ffffff;
-  border-radius: 10px;
-  width: 40px;
-  height: 40px;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -399,9 +419,9 @@ body {
 .dashboard-header-search-input {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 14px 10px 40px;
-  font-size: 0.9rem;
+  border-radius: 10px;
+  padding: 8px 12px 8px 38px;
+  font-size: 0.875rem;
   background: #ffffff;
   cursor: pointer;
 }
@@ -413,9 +433,9 @@ body {
 }
 
 .dashboard-header-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: #ffffff;
   display: inline-flex;
@@ -467,18 +487,18 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 28px 20px;
+  padding: 20px 16px;
 }
 
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .sidebar-logo {
-  height: 40px;
+  height: 32px;
   width: auto;
   display: block;
 }
@@ -496,26 +516,26 @@ body {
 
 .sidebar-section-label {
   color: #9ca3af;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0 8px;
-  margin-bottom: 12px;
+  padding: 0 6px;
+  margin-bottom: 10px;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: 14px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
   text-decoration: none;
   color: #6b7280;
   position: relative;
@@ -538,8 +558,8 @@ body {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 4px;
-  height: 24px;
+  width: 3px;
+  height: 20px;
   background: #667eea;
   border-radius: 0 4px 4px 0;
 }

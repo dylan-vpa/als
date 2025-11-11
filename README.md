@@ -29,6 +29,7 @@ als/
   - Resumen del documento.
   - Hallazgos: alerts, missing, evidence.
   - Recursos recomendados (visible con estado “check” sin alertas ni faltantes), incluyendo coincidencias con inventario.
+- Funciona como **PWA**: se puede instalar en escritorio/móvil y trabajar offline con la última información sincronizada.
 - Recursos (`/dashboard/resources`):
   - Crear, editar inline, eliminar.
   - Filtros por tipo y disponibilidad.
@@ -62,6 +63,14 @@ cd front
 npm ci
 npm run dev
 ```
+
+### Modo PWA
+
+- Entorno local: `npm run dev` y abre http://localhost:5173.
+- Instala la app desde la opción “Instalar aplicación” del navegador (Chrome/Edge/Firefox en desktop, Chrome/Edge/Brave en Android).
+- Service Worker (`public/pwa-sw.js`) mantiene en caché `index.html`, manifest e íconos; si requieres limpiar la caché manualmente, borra los datos del sitio en el navegador.
+- Manifesto web: `public/manifest.webmanifest`.
+- Si realizas cambios en el SW, ejecuta `npm run build` o recarga con _Update on reload_ en las DevTools para obtener la versión nueva.
 URLs:
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8000

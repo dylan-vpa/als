@@ -5,7 +5,6 @@ export interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, full_name?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -31,11 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(user);
   }
 
-  async function signup(email: string, password: string, full_name?: string) {
-    const { user } = await apiClient.signup({ email, password, full_name });
-    setUser(user);
-  }
-
   async function logout() {
     await apiClient.logout();
     setUser(null);
@@ -52,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const value = useMemo<AuthContextType>(() => ({ user, loading, login, signup, logout, refreshUser }), [user, loading]);
+  const value = useMemo<AuthContextType>(() => ({ user, loading, login, logout, refreshUser }), [user, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

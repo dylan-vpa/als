@@ -43,9 +43,14 @@ def get_models(current_user: SystemUser = Depends(get_current_user)):
     # Convertir a lista de nombres simple como espera el frontend
     names: List[str] = []
     for m in models:
-        name = m.get("name") if isinstance(m, dict) else None
-        if name:
-            names.append(name)
+        if isinstance(m, dict):
+            name = m.get("name") or m.get("model")
+            if name:
+                names.append(str(name))
+        else:
+            names.append(str(m))
+    if ai.model and ai.model not in names:
+        names.append(ai.model)
     return ModelsResponse(models=names, default_model=ai.model)
 
 @router.post("/check-document", response_model=Dict)

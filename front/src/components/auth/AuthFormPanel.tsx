@@ -34,10 +34,12 @@ export default function AuthFormPanel({ mode, onChangeMode }: AuthFormPanelProps
             lineHeight: "1.2"
           }}
         >
-          {mode === "login" ? "Hi there!" : "Create Account"}
+          {mode === "login" ? "¡Bienvenido de nuevo!" : "Crea tu cuenta"}
         </h1>
         <p style={{ fontSize: "15px", color: "#6b7280", margin: 0 }}>
-          {mode === "login" ? "Welcome to ALS Dashboard" : "Join ALS Dashboard today"}
+          {mode === "login"
+            ? "Ingresa con tus credenciales para continuar"
+            : "Regístrate para comenzar a usar el panel de OIT"}
         </p>
       </div>
 
@@ -53,7 +55,7 @@ export default function AuthFormPanel({ mode, onChangeMode }: AuthFormPanelProps
       >
         {mode === "login" ? (
           <>
-            Don't have an account?{" "}
+            ¿No tienes cuenta?{" "}
             <button
               onClick={() => onChangeMode("signup")}
               style={{
@@ -66,12 +68,12 @@ export default function AuthFormPanel({ mode, onChangeMode }: AuthFormPanelProps
                 fontSize: "14px"
               }}
             >
-              Sign up
+              Regístrate
             </button>
           </>
         ) : (
           <>
-            Already have an account?{" "}
+            ¿Ya tienes cuenta?{" "}
             <button
               onClick={() => onChangeMode("login")}
               style={{
@@ -84,7 +86,7 @@ export default function AuthFormPanel({ mode, onChangeMode }: AuthFormPanelProps
                 fontSize: "14px"
               }}
             >
-              Log in
+              Inicia sesión
             </button>
           </>
         )}

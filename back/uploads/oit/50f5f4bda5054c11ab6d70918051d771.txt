@@ -1,0 +1,24 @@
+INFORME FINAL OIT #1
+
+Documento: raw.txt
+Estado: check
+Fecha de carga: 2025-10-21 03:38:51.503453
+
+Resumen:
+Revisión heurística: 5 presentes, 0 faltantes.
+
+Datos de Muestreo:
+- objetivo: 
+- alcance: 
+- universo: None
+- criterios_inclusion: 
+- metodo: 
+- tamano: None
+- unidades: 
+- aleatoriedad: 
+- responsables: 
+- hallazgos: 
+- fecha_inicio: 
+- fecha_fin: 
+- imagenes_plan: []
+- fotos: []

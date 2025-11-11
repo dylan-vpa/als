@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Receipt, Wrench, MessageSquare, User, X } from "lucide-react";
+import { Receipt, Wrench, MessageSquare, User, X, Bell } from "lucide-react";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   isMobile?: boolean;
@@ -13,6 +13,7 @@ export default function Sidebar({ isMobile = false, onClose, onNavigate, classNa
 
   const menuItems = [
     { path: "/dashboard/oit", icon: Receipt, label: "OITs" },
+    { path: "/dashboard/alerts", icon: Bell, label: "Alertas" },
     { path: "/dashboard/resources", icon: Wrench, label: "Recursos" },
     { path: "/dashboard/chat", icon: MessageSquare, label: "Asistente" },
     { path: "/dashboard/profile", icon: User, label: "Mi Perfil" },

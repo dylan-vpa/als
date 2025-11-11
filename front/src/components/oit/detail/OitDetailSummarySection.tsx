@@ -8,6 +8,7 @@ interface OitDetailSummarySectionProps {
 }
 
 export default function OitDetailSummarySection({ doc, statusColor, statusLabel }: OitDetailSummarySectionProps) {
+  const showReviewNotes = !!doc.review_notes?.trim();
   return (
     <div
       style={{
@@ -17,10 +18,10 @@ export default function OitDetailSummarySection({ doc, statusColor, statusLabel 
         padding: "20px 24px",
         display: "grid",
         gap: 20,
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, min(100%, 1fr)))"
+        gridTemplateColumns: showReviewNotes ? "minmax(260px, 1.1fr) minmax(200px, 1fr)" : "repeat(auto-fit, minmax(240px, min(100%, 1fr)))"
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <span style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.6 }}>Resumen</span>
         <h2
           style={{
@@ -36,6 +37,25 @@ export default function OitDetailSummarySection({ doc, statusColor, statusLabel 
           Estado general
         </h2>
         <p style={{ margin: 0, color: "#374151", lineHeight: 1.6, overflowWrap: "anywhere" }}>{doc.summary || "Sin resumen disponible."}</p>
+        {showReviewNotes && (
+          <div
+            style={{
+              marginTop: 8,
+              background: "#f0f9ff",
+              border: "1px solid #bae6fd",
+              borderRadius: 18,
+              padding: "16px 18px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+            }}
+          >
+            <span style={{ fontSize: 12, color: "#0369a1", textTransform: "uppercase", letterSpacing: 0.6 }}>
+              Notas del análisis IA
+            </span>
+            <p style={{ margin: 0, color: "#075985", fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-line" }}>{doc.review_notes}</p>
+          </div>
+        )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, min(100%, 1fr)))", gap: 16 }}>
         <div style={{ background: "#f8fafc", borderRadius: 16, padding: 16, minWidth: 0 }}>

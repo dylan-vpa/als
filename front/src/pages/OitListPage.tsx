@@ -18,6 +18,7 @@ export default function OitListPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadBanner, setUploadBanner] = useState<{ type: "success" | "warning" | "error"; message: string } | null>(null);
   const [filterType, setFilterType] = useState<string>("todos");
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -151,6 +152,7 @@ export default function OitListPage() {
 
   function handleFileSelect(f: File | null) {
     setUploadError(null);
+    setUploadBanner(null);
     if (!f) { setFile(null); return; }
     const allowed = ["pdf", "txt", "md"];
     const ext = f.name.split(".").pop()?.toLowerCase();
@@ -184,20 +186,65 @@ export default function OitListPage() {
     if (!file) return;
     setUploading(true);
     try {
-      await apiClient.uploadOit(file);
+      const doc = await apiClient.uploadOit(file);
+      const banner = buildBannerForDoc(doc);
+      setUploadBanner(banner);
       setOpenUpload(false);
       setFile(null);
       await load();
     } catch (e: any) {
-      alert(e?.message || "Error al subir archivo");
+      setUploadError(e?.message || "Error al subir archivo");
     } finally {
       setUploading(false);
     }
   }
 
+  function buildBannerForDoc(document: OitDocumentOut): { type: "success" | "warning" | "error"; message: string } {
+    const status = document.status;
+    const summary = document.summary || "Sin resumen disponible.";
+    if (status === "check") {
+      return { type: "success", message: summary };
+    }
+    if (status === "alerta") {
+      const detail = document.alerts?.[0] || "La OIT presenta observaciones. Revisa los hallazgos.";
+      return { type: "warning", message: detail };
+    }
+    const detail = document.alerts?.[0] || document.missing?.[0] || "La OIT no cumple con las normas de la empresa.";
+    return { type: "error", message: detail };
+  }
+
   return (
     <DashboardLayout title="OITs">
       <div className="oit-page">
+        {uploadBanner && (
+          <div
+            style={{
+              marginBottom: 24,
+              padding: "12px 18px",
+              borderRadius: 16,
+              background: uploadBanner.type === "success" ? "#ecfdf5" : uploadBanner.type === "warning" ? "#fff7ed" : "#fef2f2",
+              border: `1px solid ${uploadBanner.type === "success" ? "#bbf7d0" : uploadBanner.type === "warning" ? "#fed7aa" : "#fecaca"}`,
+              color: uploadBanner.type === "success" ? "#065f46" : uploadBanner.type === "warning" ? "#9a3412" : "#b91c1c",
+              fontSize: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 12
+            }}
+          >
+            <span style={{ fontWeight: 600 }}>
+              {uploadBanner.type === "success" ? "OIT cumple" : uploadBanner.type === "warning" ? "OIT con observaciones" : "OIT no cumple"}
+            </span>
+            <span style={{ flex: 1 }}>{uploadBanner.message}</span>
+            <button
+              type="button"
+              onClick={() => setUploadBanner(null)}
+              style={{ background: "transparent", border: "none", color: "inherit", cursor: "pointer", fontWeight: 600 }}
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
+
         <OitToolbar
           onToggleFilters={() => {
             if (!filterOpen) {

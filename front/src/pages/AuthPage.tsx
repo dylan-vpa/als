@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import AuthFormPanel from "../components/auth/AuthFormPanel";
@@ -6,22 +6,21 @@ import AuthHeroPanel from "../components/auth/AuthHeroPanel";
 
 const heroSlides = [
   {
-    title: "Manage your operations with ease",
-    description: "ALS Dashboard helps you streamline your workflow, manage resources, and track operations efficiently."
+    title: "Gestiona tus operaciones con facilidad",
+    description: "ALS Dashboard te ayuda a organizar el flujo de trabajo, asignar recursos y seguir tus operaciones en tiempo real."
   },
   {
-    title: "Powerful analytics at your fingertips",
-    description: "Get real-time insights and make data-driven decisions with our comprehensive analytics tools."
+    title: "Toma decisiones con datos confiables",
+    description: "Obtén métricas al instante y guía tus decisiones con paneles e indicadores personalizados."
   },
   {
-    title: "Collaborate seamlessly with your team",
-    description: "Work together efficiently with built-in collaboration features and real-time updates."
+    title: "Colabora con todo tu equipo",
+    description: "Trabaja en conjunto con actualizaciones automáticas, alertas inteligentes y seguimiento centralizado."
   }
 ];
 
 export default function AuthPage() {
-  const { user } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const { user, loading } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Auto-advance slides every 5 seconds
@@ -32,6 +31,7 @@ export default function AuthPage() {
     return () => clearInterval(interval);
   }, []);
 
+  if (loading) return <div>Cargando...</div>;
   if (user) return <Navigate to="/" replace />;
 
   return (
@@ -42,7 +42,7 @@ export default function AuthPage() {
         background: "#ffffff"
       }}
     >
-      <AuthFormPanel mode={mode} onChangeMode={setMode} />
+      <AuthFormPanel mode="login" onChangeMode={() => {}} />
       <AuthHeroPanel
         title={heroSlides[currentSlide].title}
         description={heroSlides[currentSlide].description}

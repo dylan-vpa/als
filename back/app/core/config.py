@@ -1,5 +1,12 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 from pydantic import Field
+
+
+BACK_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = BACK_DIR.parent
+
 
 class Settings(BaseSettings):
     app_name: str = Field(default="Paradixe API")
@@ -11,8 +18,8 @@ class Settings(BaseSettings):
         "http://localhost:5173",
     ])
     
-    # Database configuration
-    database_url: str = Field(default="sqlite:///./app.db")
+    # Database configuration (override with DATABASE_URL env or fallback to postgres_*)
+    database_url: str | None = Field(default=None)
     postgres_host: str = Field(default="localhost")
     postgres_port: int = Field(default=5432)
     postgres_user: str = Field(default="paradixe")
@@ -24,7 +31,7 @@ class Settings(BaseSettings):
         return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
 
     class Config:
-        env_file = "./back/.env"
+        env_file = str(BACK_DIR / ".env")
         env_file_encoding = "utf-8"
 
 settings = Settings()

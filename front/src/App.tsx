@@ -2,8 +2,8 @@ import React from "react";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/AuthContext";
+import { NotificationsProvider } from "./contexts/NotificationsContext";
 import AuthPage from "./pages/AuthPage";
-import DashboardPage from "./pages/DashboardPage";
 import OitDetailPage from "./pages/OitDetailPage";
 import OitSamplingPage from "./pages/OitSamplingPage";
 import ResourcesPage from "./pages/ResourcesPage";
@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import OitListPage from "./pages/OitListPage";
 import AiChatPage from "./pages/AiChatPage";
 import ProfilePage from "./pages/ProfilePage";
+import AlertsPage from "./pages/AlertsPage";
 
 function Navbar() {
   const { user } = useAuth();
@@ -58,69 +59,79 @@ function Home() {
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
-        {/* Redirige inicio a dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <OitListPage />
-            </ProtectedRoute>
-          }
-        />
-        {/* Añadir ruta explícita para listado de OITs bajo /dashboard/oit */}
-        <Route
-          path="/dashboard/oit"
-          element={
-            <ProtectedRoute>
-              <OitListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/oit/:id"
-          element={
-            <ProtectedRoute>
-              <OitDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/oit/:id/muestreo"
-          element={
-            <ProtectedRoute>
-              <OitSamplingPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/resources"
-          element={
-            <ProtectedRoute>
-              <ResourcesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/chat"
-          element={
-            <ProtectedRoute>
-              <AiChatPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+      <NotificationsProvider>
+        <Routes>
+          {/* Redirige inicio a dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <OitListPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Añadir ruta explícita para listado de OITs bajo /dashboard/oit */}
+          <Route
+            path="/dashboard/oit"
+            element={
+              <ProtectedRoute>
+                <OitListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/oit/:id"
+            element={
+              <ProtectedRoute>
+                <OitDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/oit/:id/muestreo"
+            element={
+              <ProtectedRoute>
+                <OitSamplingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/resources"
+            element={
+              <ProtectedRoute>
+                <ResourcesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/chat"
+            element={
+              <ProtectedRoute>
+                <AiChatPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/alerts"
+            element={
+              <ProtectedRoute>
+                <AlertsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </NotificationsProvider>
     </AuthProvider>
   );
 }

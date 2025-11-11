@@ -1,0 +1,21 @@
+OIT Implementación Plataforma de Reportes ESG
+Identificador: OIT-2025-115
+Versión del documento: 1.3
+Fecha de emisión: 2025-11-10
+Responsable que aprueba: Mariana Duarte, Directora de Sostenibilidad
+Alcance detallado:
+- Desplegar módulo de reportería ESG en la intranet corporativa.
+- Integrar indicadores ambientales de las plantas Bogotá, Cali y Medellín.
+- Automatizar controles de acceso y auditoría para los reportes.
+Requisitos legales y normativos aplicables:
+- Ley 1715 sobre reporte de sostenibilidad energética.
+- Norma ISO 14064 para cuantificación de emisiones.
+- Política corporativa de transparencia TR-05.
+Evidencias y anexos:
+- Anexo A: Matriz de indicadores ESG con trazabilidad histórica.
+- Anexo B: Certificación de la herramienta GRI aprobada por auditoría interna.
+- Anexo C: Resultado de pruebas de acceso y bitácora de auditoría.
+Plan de recursos:
+- Personal: 1 líder de sostenibilidad, 2 ingenieros de datos, 1 especialista en ciberseguridad.
+- Equipos: Servidores virtuales ESG-QA y ESG-PRD, herramientas ETL certificadas.
+- Materiales: Guías de reporte GRI, manuales de operación, licencias de software analítico.

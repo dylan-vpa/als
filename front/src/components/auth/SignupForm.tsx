@@ -45,12 +45,12 @@ export default function SignupForm({ onSwitch }: { onSwitch?: () => void }) {
   return (
     <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div>
-        <label style={labelStyle}>Full Name</label>
+        <label style={labelStyle}>Nombre completo</label>
         <input
           type="text"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          placeholder="Alex Johnson"
+          placeholder="Nombre y apellido"
           style={inputStyle}
           onFocus={(e) => e.target.style.borderColor = "#2563eb"}
           onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
@@ -58,12 +58,12 @@ export default function SignupForm({ onSwitch }: { onSwitch?: () => void }) {
       </div>
 
       <div>
-        <label style={labelStyle}>Email</label>
+        <label style={labelStyle}>Correo electrónico</label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="alex@example.com"
+          placeholder="usuario@empresa.com"
           required
           style={inputStyle}
           onFocus={(e) => e.target.style.borderColor = "#2563eb"}
@@ -72,12 +72,12 @@ export default function SignupForm({ onSwitch }: { onSwitch?: () => void }) {
       </div>
 
       <div>
-        <label style={labelStyle}>Password</label>
+        <label style={labelStyle}>Contraseña</label>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••••"
+          placeholder="Define una contraseña segura"
           required
           style={inputStyle}
           onFocus={(e) => e.target.style.borderColor = "#2563eb"}
@@ -117,7 +117,7 @@ export default function SignupForm({ onSwitch }: { onSwitch?: () => void }) {
         onMouseEnter={(e) => !loading && (e.currentTarget.style.background = "#1d4ed8")}
         onMouseLeave={(e) => !loading && (e.currentTarget.style.background = "#2563eb")}
       >
-        {loading ? "Creating account..." : "SIGN UP"}
+        {loading ? "Creando cuenta..." : "Crear cuenta"}
       </button>
     </form>
   );

@@ -63,11 +63,10 @@ export default function AiChatPage() {
     setLoading(true);
     try {
       const res = await apiClient.aiChat(text, selectedModel);
-      const modelInfo = res.model ? ` (usando modelo: ${res.model})` : "";
-      const fallbackInfo = res.used_fallback ? " (usando fallback)" : "";
-      setMessages([...next, { 
-        role: "assistant", 
-        content: res.reply + (modelInfo || fallbackInfo ? `\n\n_${modelInfo}${fallbackInfo}_` : "") 
+      const fallbackNote = res.used_fallback ? "\n\n_(usando fallback)_" : "";
+      setMessages([...next, {
+        role: "assistant",
+        content: res.reply + fallbackNote
       }]);
     } catch (e: any) {
       setError(e?.message || "Error enviando mensaje");

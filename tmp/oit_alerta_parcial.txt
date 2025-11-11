@@ -1,0 +1,29 @@
+OIT Actualización Políticas de Firewall
+Identificador: OIT-2025-092
+Versión del documento: 1.0
+Fecha de emisión: 2025-10-28
+Responsable que aprueba: Ingrid Rojas, Jefe de Infraestructura
+Firmas: Ingrid Rojas (firma digital) y acta de aprobación del comité de cambios
+Alcance detallado:
+- Revisar reglas activas del firewall perimetral y segmentación interna.
+- Coordinar ventanas de mantenimiento con el equipo de operaciones.
+- Documentar impactos en aplicaciones críticas y planes de reversión.
+Lista de requisitos legales y normativos aplicables:
+- Guía externa CSIRT-CO sobre endurecimiento de perímetros.
+- Política corporativa de ciberseguridad INFO-12.
+- Recomendaciones ISO 27002 en controles de red.
+Plan de recursos:
+- Personal: 1 arquitecto de red, 2 ingenieros de seguridad, 1 analista de aplicaciones.
+- Equipos: Firewall de laboratorio, licencias temporales de análisis de tráfico, consola SIEM.
+- Materiales: Procedimientos actualizados, reporte de cambios, planillas de respaldo.
+Evidencias y anexos:
+- Registro de pruebas de laboratorio del firewall (pendiente de firma).
+- Checklist de endurecimiento aplicado por el equipo de seguridad (pendiente de cierre).
+Observaciones:
+La documentación de soporte se entregará tras cerrar las pruebas, por lo que los anexos aún no están disponibles.
+Reglas de validación consideradas:
+- Si falta algún requisito obligatorio, clasificar como `error`.
+- Si hay información ambigua o incompleta en hasta dos requisitos, clasificar como `alerta`.
+- Solo marcar `check` cuando todos los requisitos están presentes y coherentes.
+- Registrar en evidencias los ítems que se encontraron correctamente.
+- Registrar en faltantes los requisitos que no se identificaron o están incompletos.

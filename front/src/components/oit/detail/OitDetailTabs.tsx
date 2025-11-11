@@ -2,15 +2,15 @@ import React from "react";
 import { AlertTriangle, Boxes, Info } from "lucide-react";
 
 interface OitDetailTabsProps {
-  activeTab: "resumen" | "hallazgos" | "recursos";
-  onChange: (tab: "resumen" | "hallazgos" | "recursos") => void;
+  activeTab: "resumen" | "hallazgos" | "plan";
+  onChange: (tab: "resumen" | "hallazgos" | "plan") => void;
   children: React.ReactNode;
 }
 
 const tabs = [
   { key: "resumen", label: "Resumen", icon: Info },
   { key: "hallazgos", label: "Hallazgos", icon: AlertTriangle },
-  { key: "recursos", label: "Recursos", icon: Boxes },
+  { key: "plan", label: "Plan", icon: Boxes },
 ] as const;
 
 export default function OitDetailTabs({ activeTab, onChange, children }: OitDetailTabsProps) {

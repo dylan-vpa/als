@@ -1,0 +1,45 @@
+OIT Migración Plataforma CRM
+Identificador: OIT-2025-045
+Versión del documento: 1.2
+Fecha de emisión: 2025-10-21
+Responsable que aprueba: Laura Méndez, Directora de TI
+Alcance detallado:
+- Migrar la base de datos histórica del CRM a la nueva infraestructura cloud.
+- Validar integridad de datos y pruebas de reconciliación con las áreas comercial y soporte.
+- Capacitar a los usuarios clave en los nuevos flujos y reportes.
+Requisitos legales y normativos aplicables:
+- Cumplimiento de la Ley 1581 de protección de datos personales.
+- Adherencia a la política interna de seguridad INF-SEC-07.
+- Aplicación del estándar ISO/IEC 27001 para gestión de la información.
+Evidencias y anexos:
+- Anexo A: Matriz de trazabilidad de requisitos legales firmada.
+- Anexo B: Reporte de pruebas de migración con resultados de reconciliación.
+- Anexo C: Lista de asistencia y evaluaciones de capacitación.
+Plan de recursos:
+- Personal: 2 ingenieros de datos, 1 coordinador de TI, 1 analista de soporte.
+- Equipos: Servidor de staging, herramientas ETL Pentaho, licencias temporales CRM.
+- Materiales: Manuales actualizados, planillas de control, dispositivos de respaldo cifrados.
+
+---
+
+OIT Implementación Checklist de Seguridad en Planta
+Identificador: OIT-2025-078
+Versión del documento: 2.0
+Fecha de emisión: 2025-11-05
+Responsable que aprueba: Carlos Salazar, Gerente de Operaciones
+Alcance detallado:
+- Instalar sistemas de detección temprana en líneas de producción 1 y 2.
+- Actualizar procedimientos de evacuación y capacitación al personal operativo.
+- Coordinar auditoría interna para verificar cumplimiento de normas de seguridad industrial.
+Requisitos legales y normativos aplicables:
+- Decreto 1072 de Seguridad y Salud en el Trabajo.
+- Reglamento Técnico RETIE para instalaciones eléctricas industriales.
+- Política corporativa de continuidad operativa COP-14.
+Evidencias y anexos:
+- Anexo 1: Acta de instalación con certificaciones de los proveedores.
+- Anexo 2: Registro fotográfico de señalización y rutas de evacuación.
+- Anexo 3: Informes de auditoría interna y lista de asistencia a las capacitaciones.
+Plan de recursos:
+- Personal: 1 supervisor HSE, 3 técnicos electricistas, 1 consultor externo en seguridad.
+- Equipos: Detectores inteligentes, tableros eléctricos certificados, kits de señalización.
+- Materiales: Manuales de procedimiento, formularios de inspección, chalecos y EPP certificados.

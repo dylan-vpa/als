@@ -1,0 +1,71 @@
+{
+  "result": {
+    "status": "error",
+    "summary": "Validación README: 4 criterios cumplidos, 7 faltantes.",
+    "alerts": [
+      "No cumple con las normas README requeridas."
+    ],
+    "missing": [
+      "Identificador único del OIT y versión del documento. (README.md)",
+      "Lista de requisitos legales y normativos aplicables. (README.md)",
+      "Evidencias o anexos que soporten cada requisito. (README.md)",
+      "Si hay información ambigua o incompleta en hasta dos requisitos, clasificar como `alerta`. (README.md)",
+      "Solo marcar `check` cuando todos los requisitos están presentes y coherentes. (README.md)",
+      "Registrar en evidencias los ítems que se encontraron correctamente. (README.md)",
+      "Registrar en faltantes los requisitos que no se identificaron o están incompletos. (README.md)"
+    ],
+    "evidence": [
+      "Fecha de emisión y responsable que aprueba. (README.md)",
+      "Alcance detallado de las actividades a ejecutar. (README.md)",
+      "Plan de recursos (personal, equipos y materiales) necesarios. (README.md)",
+      "Si falta algún requisito obligatorio, clasificar como `error`. (README.md)"
+    ]
+  },
+  "requirements": [
+    {
+      "text": "Identificador único del OIT y versión del documento.",
+      "source": "README.md"
+    },
+    {
+      "text": "Fecha de emisión y responsable que aprueba.",
+      "source": "README.md"
+    },
+    {
+      "text": "Alcance detallado de las actividades a ejecutar.",
+      "source": "README.md"
+    },
+    {
+      "text": "Lista de requisitos legales y normativos aplicables.",
+      "source": "README.md"
+    },
+    {
+      "text": "Evidencias o anexos que soporten cada requisito.",
+      "source": "README.md"
+    },
+    {
+      "text": "Plan de recursos (personal, equipos y materiales) necesarios.",
+      "source": "README.md"
+    },
+    {
+      "text": "Si falta algún requisito obligatorio, clasificar como `error`.",
+      "source": "README.md"
+    },
+    {
+      "text": "Si hay información ambigua o incompleta en hasta dos requisitos, clasificar como `alerta`.",
+      "source": "README.md"
+    },
+    {
+      "text": "Solo marcar `check` cuando todos los requisitos están presentes y coherentes.",
+      "source": "README.md"
+    },
+    {
+      "text": "Registrar en evidencias los ítems que se encontraron correctamente.",
+      "source": "README.md"
+    },
+    {
+      "text": "Registrar en faltantes los requisitos que no se identificaron o están incompletos.",
+      "source": "README.md"
+    }
+  ],
+  "readme_combined": "# README.md\n\n# Normas corporativas para revisión de OIT\n\n## Requisitos obligatorios\n- Identificador único del OIT y versión del documento.\n- Fecha de emisión y responsable que aprueba.\n- Alcance detallado de las actividades a ejecutar.\n- Lista de requisitos legales y normativos aplicables.\n- Evidencias o anexos que soporten cada requisito.\n- Plan de recursos (personal, equipos y materiales) necesarios.\n\n## Reglas de validación\n- Si falta algún requisito obligatorio, clasificar como `error`.\n- Si hay información ambigua o incompleta en hasta dos requisitos, clasificar como `alerta`.\n- Solo marcar `check` cuando todos los requisitos están presentes y coherentes.\n- Registrar en evidencias los ítems que se encontraron correctamente.\n- Registrar en faltantes los requisitos que no se identificaron o están incompletos."
+}

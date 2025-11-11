@@ -32,7 +32,39 @@ export interface OitDocumentOut {
   alerts?: string[];
   missing?: string[];
   evidence?: string[];
+  reference_bundle_path?: string | null;
+  reference_bundle_available?: boolean;
+  can_recommend?: boolean;
+  compliance_bundle_path?: string | null;
+  compliance_report_path?: string | null;
+  can_sample?: boolean;
+  pending_gap_count?: number;
+  approval_status: string;
+  approved_schedule_date?: string | null;
+  resource_plan?: Record<string, any> | null;
+  resource_gaps?: Record<string, any> | null;
+  approval_notes?: string | null;
+  review_notes?: string | null;
   created_at: string;
+}
+
+export interface NotificationOut {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  document_id?: number | null;
+  payload?: Record<string, any> | null;
+  read_at?: string | null;
+  created_at: string;
+}
+
+export interface NotificationsResponse {
+  items: NotificationOut[];
+}
+
+export interface NotificationsMarkReadRequest {
+  notification_ids?: number[];
 }
 
 export interface Resource {
@@ -73,6 +105,73 @@ export interface RecommendationItem {
 export interface RecommendationsResponse {
   recommendations: RecommendationItem[];
   matches: Record<string, Resource[]>;
+  schedule?: {
+    suggested_date?: string | null;
+    suggested_time?: string | null;
+    justification?: string | null;
+  } | null;
+}
+
+export interface PlanAssignments {
+  request: {
+    type: string;
+    name?: string | null;
+    quantity: number;
+  };
+  assignments: Array<{
+    id: number;
+    name: string;
+    type: string;
+    location?: string | null;
+    available_quantity: number;
+    allocated_quantity: number;
+    available: boolean;
+  }>;
+  fulfilled_quantity: number;
+}
+
+export interface PlanResponse {
+  approval_status: string;
+  plan: {
+    scheduled_datetime?: string | null;
+    notes?: string | null;
+    assignments: PlanAssignments[];
+    ai_schedule?: {
+      suggested_date?: string | null;
+      suggested_time?: string | null;
+      justification?: string | null;
+    } | null;
+  };
+  schedule?: {
+    suggested_date?: string | null;
+    suggested_time?: string | null;
+    justification?: string | null;
+  } | null;
+  gaps: Array<{
+    type: string;
+    name?: string | null;
+    quantity: number;
+    status: string;
+  }>;
+  document: OitDocumentOut;
+}
+
+export interface CreatePlanRequest {
+  scheduled_datetime?: string | null;
+  notes?: string | null;
+  requested_resources?: Array<{
+    type: string;
+    name?: string | null;
+    quantity: number;
+  }>;
+}
+
+export interface ConfirmPlanRequest {
+  approved: boolean;
+  scheduled_datetime?: string | null;
+  notes?: string | null;
+  plan?: Record<string, any> | null;
+  gaps?: Record<string, any> | null;
 }
 
 export interface ChatResponse {
@@ -131,8 +230,7 @@ class ApiClient {
       return (await res.json()) as T;
     }
 
-    // @ts-expect-error allow non-json response
-    return (await res.text()) as T;
+    return (await res.text()) as unknown as T;
   }
 
   async requestBlob(path: string, options: RequestInit = {}): Promise<Blob> {
@@ -216,8 +314,26 @@ class ApiClient {
     return await this.request<OitDocumentOut>(`/oit/${id}`, { method: "GET" });
   }
 
+  async downloadReferenceBundle(id: number): Promise<Blob> {
+    return await this.requestBlob(`/oit/${id}/reference-bundle`, { method: "GET" });
+  }
+
   async getOitRecommendations(id: number): Promise<RecommendationsResponse> {
     return await this.request<RecommendationsResponse>(`/oit/${id}/recommendations`, { method: "GET" });
+  }
+
+  async createOitPlan(id: number, payload: CreatePlanRequest): Promise<PlanResponse> {
+    return await this.request<PlanResponse>(`/oit/${id}/plan`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async confirmOitPlan(id: number, payload: ConfirmPlanRequest): Promise<OitDocumentOut> {
+    return await this.request<OitDocumentOut>(`/oit/${id}/plan/confirm`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
   }
 
   async aiChat(message: string, model?: string): Promise<ChatResponse> {
@@ -243,6 +359,19 @@ class ApiClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sampling),
+    });
+  }
+
+  async listNotifications(limit = 50): Promise<NotificationsResponse> {
+    return await this.request<NotificationsResponse>(`/notifications?limit=${limit}`, {
+      method: "GET",
+    });
+  }
+
+  async markNotificationsRead(payload: NotificationsMarkReadRequest): Promise<{ updated: number }> {
+    return await this.request<{ updated: number }>(`/notifications/mark-read`, {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
   }
 
