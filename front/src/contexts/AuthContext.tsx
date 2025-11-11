@@ -6,6 +6,7 @@ export interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  signup: (data: { email: string; password: string; full_name?: string }) => Promise<{ user: User; token: string }>;
   refreshUser: () => Promise<void>;
 }
 
@@ -46,7 +47,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const value = useMemo<AuthContextType>(() => ({ user, loading, login, logout, refreshUser }), [user, loading]);
+  async function signup(data: { email: string; password: string; full_name?: string }) {
+    const { user, token } = await apiClient.signup(data);
+    setUser(user);
+    return { user, token };
+  }
+
+  const value = useMemo<AuthContextType>(
+    () => ({ user, loading, login, logout, signup, refreshUser }), 
+    [user, loading, login, logout, signup, refreshUser]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

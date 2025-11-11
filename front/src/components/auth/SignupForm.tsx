@@ -14,10 +14,23 @@ export default function SignupForm({ onSwitch }: { onSwitch?: () => void }) {
     setError(null);
     setLoading(true);
     try {
-      await signup(email, password, fullName);
+      // Asegurarse de que todos los campos requeridos estén completos
+      if (!email || !password) {
+        throw new Error("Por favor completa todos los campos requeridos");
+      }
+      
+      // Llamar a la función signup con los datos del formulario
+      const { token, user } = await signup({ 
+        email, 
+        password, 
+        full_name: fullName || undefined 
+      });
+      
+      // Opcional: Redirigir o cambiar a la vista de inicio de sesión
       onSwitch?.();
     } catch (err: any) {
-      setError(err?.message || "Error al registrarse");
+      console.error("Error en el registro:", err);
+      setError(err?.message || "Error al registrarse. Por favor, inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
