@@ -13,6 +13,7 @@ export default function DashboardLayout({ title, children, actions, contentStyle
   const isWindow = typeof window !== "undefined";
   const [isMobile, setIsMobile] = useState<boolean>(() => (isWindow ? window.innerWidth <= 1024 : false));
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => (isWindow ? window.innerWidth > 1024 : true));
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isWindow) return;
@@ -49,35 +50,36 @@ export default function DashboardLayout({ title, children, actions, contentStyle
     }
   };
 
-  return (
-    <div className="dashboard-shell">
-      <aside
-        className={`dashboard-sidebar ${isMobile ? "dashboard-sidebar--mobile" : ""} ${sidebarOpen ? "is-open" : ""}`.trim()}
-      >
-        <Sidebar
-          isMobile={isMobile}
-          onClose={handleCloseSidebar}
-          onNavigate={handleCloseSidebar}
-        />
-      </aside>
+  const handleSidebarCollapse = (collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
+  };
 
-      {isMobile && sidebarOpen && (
-        <button
-          type="button"
-          className="dashboard-sidebar-overlay"
-          onClick={handleCloseSidebar}
-          aria-label="Cerrar menú"
-        />
+  // Calcular el padding izquierdo basado en el estado de la sidebar
+  const leftPadding = isMobile ? "" : sidebarCollapsed ? "md:pl-20" : "md:pl-64";
+  const mainWidth = isMobile ? "w-full" : sidebarCollapsed ? "md:w-[calc(100%-5rem)]" : "md:w-[calc(100%-16rem)]";
+
+  return (
+    <div className="min-h-screen bg-background">
+      {!isMobile && (
+        <aside className={`fixed inset-y-0 left-0 z-30 hidden md:block ${sidebarCollapsed ? "w-20" : "w-64"}`}>
+          <Sidebar isMobile={false} onCollapse={handleSidebarCollapse} />
+        </aside>
       )}
 
-      <div className="dashboard-main">
-        <DashboardHeader
-          title={title}
-          actions={actions}
-          showSidebarToggle={isMobile}
-          onToggleSidebar={handleToggleSidebar}
-        />
-        <main className="dashboard-content" style={contentStyle}>
+      {isMobile && (
+        <>
+          <aside className={`${sidebarOpen ? "block" : "hidden"} fixed inset-y-0 left-0 z-30 w-64`}>
+            <Sidebar isMobile={true} onClose={handleCloseSidebar} onNavigate={handleCloseSidebar} />
+          </aside>
+          {sidebarOpen && (
+            <button type="button" className="fixed inset-0 bg-black/50 z-20" onClick={handleCloseSidebar} aria-label="Cerrar menú" />
+          )}
+        </>
+      )}
+
+      <div className={`flex min-h-screen flex-col transition-all duration-300 ${leftPadding}`}>
+        <DashboardHeader title={title} actions={actions} showSidebarToggle={isMobile} onToggleSidebar={handleToggleSidebar} />
+        <main className={`flex-1 px-6 py-6 max-w-7xl ${mainWidth} mx-auto transition-all duration-300`} style={contentStyle}>
           {children}
         </main>
       </div>
