@@ -1,5 +1,6 @@
 import React from "react";
 import Button from "../ui/Button";
+import { Send } from "lucide-react";
 
 interface AiChatInputBarProps {
   value: string;
@@ -19,57 +20,30 @@ export default function AiChatInputBar({
   onKeyDown
 }: AiChatInputBarProps) {
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: "50%",
-        bottom: 32,
-        transform: "translateX(-50%)",
-        display: "flex",
-        justifyContent: "center",
-        width: "100%",
-        pointerEvents: "none",
-        zIndex: 25
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "10px 12px",
-          borderRadius: 999,
-          border: "1px solid #e5e7eb",
-          boxShadow: "0 18px 38px rgba(15,23,42,0.12)",
-          background: "#ffffff",
-          width: "min(520px, 90%)",
-          pointerEvents: "auto"
-        }}
-      >
-        <input
-          className="input"
-          style={{
-            flex: 1,
-            border: "none",
-            background: "transparent",
-            padding: "0 10px",
-            fontSize: 15
-          }}
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={onKeyDown}
-          disabled={loading}
-        />
-        <Button
-          variant="primary"
-          onClick={onSubmit}
-          disabled={loading}
-          loading={loading}
-          style={{ borderRadius: 999, padding: "8px 18px" }}
-        >
-          Enviar
-        </Button>
+    <div className="fixed left-1/2 -translate-x-1/2 bottom-8 z-30 w-full max-w-3xl px-4">
+      <div className="rounded-full border bg-card shadow-xl w-full overflow-hidden">
+        <div className="flex items-center">
+          <input
+            type="text"
+            className="flex-1 h-11 px-4 bg-transparent outline-none border-none text-sm"
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.currentTarget.value)}
+            onKeyDown={onKeyDown}
+            disabled={loading}
+          />
+          <Button
+            aria-label="Enviar"
+            variant="primary"
+            onClick={onSubmit}
+            disabled={loading}
+            loading={loading}
+            className="h-11 px-4 rounded-none"
+          >
+            <Send className="h-4 w-4" />
+            <span>Enviar</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

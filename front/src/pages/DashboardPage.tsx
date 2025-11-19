@@ -78,16 +78,22 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout title="Dashboard">
-      <DashboardHeaderSection greetingName={user ? user.full_name || user.email : undefined} />
-      <DashboardStatsGrid stats={stats} />
-      <DashboardUploadCard
-        selectedFile={selectedFile}
-        uploading={uploading}
-        error={error}
-        onFileChange={setSelectedFile}
-        onUpload={onUpload}
-      />
-      <DashboardRecentTable items={recentItems} />
+      <div className="grid gap-6">
+        <DashboardHeaderSection greetingName={user ? user.full_name || user.email : undefined} />
+        <DashboardStatsGrid stats={stats} />
+        <div className="grid gap-6 md:grid-cols-2">
+          <DashboardUploadCard
+            selectedFile={selectedFile}
+            uploading={uploading}
+            error={error}
+            onFileChange={setSelectedFile}
+            onUpload={onUpload}
+          />
+          <div className="bg-card border rounded-xl p-4">
+            <DashboardRecentTable items={recentItems} />
+          </div>
+        </div>
+      </div>
     </DashboardLayout>
   );
 }

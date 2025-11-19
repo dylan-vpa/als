@@ -13,29 +13,22 @@ interface AiChatTranscriptProps {
 
 export default function AiChatTranscript({ messages, error, endRef }: AiChatTranscriptProps) {
   return (
-    <div style={{ padding: "32px 40px 200px", display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="px-6 md:px-10 pb-36 flex flex-col gap-4">
       {messages.map((m, i) => (
         <div
           key={i}
+          className={(m.role === "user" ? "ml-auto" : "mr-auto") + " max-w-[68%] px-4 py-3 rounded-2xl text-sm leading-6 " + (m.role === "user" ? "text-white" : "text-foreground")}
           style={{
-            alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-            background: m.role === "user" ? "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)" : "#f3f4f6",
-            color: m.role === "user" ? "#ffffff" : "#111827",
-            padding: "12px 16px",
-            borderRadius: 18,
-            maxWidth: "68%",
-            boxShadow: m.role === "user" ? "0 16px 30px rgba(37,99,235,0.25)" : "none",
-            border: m.role === "assistant" ? "1px solid #e5e7eb" : "none",
-            whiteSpace: "pre-wrap",
-            fontSize: 14,
-            lineHeight: 1.5
+            background: m.role === "user" ? "linear-gradient(135deg,#2563eb 0%,#7c3aed 100%)" : undefined,
+            boxShadow: m.role === "user" ? "0 16px 30px rgba(37,99,235,0.25)" : undefined,
+            backgroundColor: m.role === "assistant" ? "#f3f4f6" : undefined
           }}
         >
           {m.content}
         </div>
       ))}
       {error && (
-        <div className="error" style={{ alignSelf: "center" }}>
+        <div className="mx-auto text-destructive text-sm">
           {error}
         </div>
       )}

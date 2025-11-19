@@ -64,6 +64,8 @@ export default function App() {
           {/* Redirige inicio a dashboard */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<AuthPage />} />
+          {/* Ruta directa para registro que abre AuthPage en modo signup */}
+          <Route path="/register" element={<AuthPage />} />
           <Route
             path="/dashboard"
             element={

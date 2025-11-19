@@ -1,0 +1,27 @@
+name,type,quantity,available,location,description
+Camion 1,vehiculo,1,yes,Base Norte,Camión doble tracción
+Generador 5kW,equipo,1,yes,Planta,Generador eléctrico portátil
+Operario,personal,2,yes,Campo,Personal operativo
+Filtro Aceite,insumo,10,yes,Almacén,Filtro para mantenimiento
+Bomba sumergible,equipo,1,yes,Pozo,Equipo para extracción de agua
+Supervisor,personal,1,yes,Campo,Supervisión de operación
+Camion 2,vehiculo,1,no,Base Sur,Camión en mantenimiento
+Retroexcavadora X,equipo,1,yes,Obra,Equipo de excavación
+Ingeniero de campo,personal,1,yes,Campo,Responsable técnico
+Casco seguridad,insumo,20,yes,Almacén,Elementos de protección personal
+Guantes nitrilo,insumo,30,yes,Almacén,Guantes desechables
+Kit derrames,insumo,5,yes,Almacén,Control de derrames
+Torre de iluminación,equipo,2,yes,Obra,Iluminación nocturna
+Camioneta 4x4,vehiculo,2,yes,Base Norte,Transporte operativo
+Licencia software ETL,insumo,3,yes,Planta,Procesamiento de datos
+Servidor ESG-QA,equipo,1,yes,Planta QA,Servidor pruebas ESG
+Servidor ESG-PRD,equipo,1,yes,Planta PRD,Servidor producción ESG
+Analista de datos,personal,2,yes,Planta,Procesamiento y limpieza de datos
+Especialista ciberseguridad,personal,1,yes,Planta,Revisión de controles
+Manual GRI 2024,insumo,4,yes,Almacén,Guía de reporte GRI
+Vehículo de soporte,vehiculo,1,yes,Base Central,Transporte de soporte
+Bomba peristáltica,equipo,1,yes,Laboratorio,Toma de muestras
+Operario nocturno,personal,2,yes,Campo,Turno noche
+Supervisor nocturno,personal,1,yes,Campo,Coordinación de turno
+Mangueras de alta presión,insumo,10,yes,Almacén,Accesorios de muestreo
+GPS portátil,equipo,3,yes,Campo,Ubicación de puntos

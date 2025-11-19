@@ -1,6 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import PhotoUploader from "./PhotoUploader";
+import StepIndicator from "./StepIndicator";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 export interface SamplingData {
+  tipo_asignacion?: string | null;
+  tipo_muestreo?: "texto" | "imagen" | "mixto" | "";
   objetivo?: string;
   alcance?: string;
   universo?: number | null;
@@ -11,24 +16,34 @@ export interface SamplingData {
   aleatoriedad?: string;
   responsables?: string;
   hallazgos?: string;
-  fecha_inicio?: string; // ISO yyyy-mm-dd
-  fecha_fin?: string; // ISO yyyy-mm-dd
-  // Nuevos campos para evidencias/imágenes
-  imagenes_plan?: string[]; // data URLs
-  fotos?: string[]; // data URLs
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  imagenes_plan?: string[];
+  fotos?: string[];
+}
+
+interface SamplingWizardProps {
+  storageKey: string;
+  initial?: SamplingData | null;
+  onComplete: (data: SamplingData) => void;
+  assignmentTypes?: string[];
+  allowed?: boolean;
+  scheduledDate?: string | null;
+  schema?: any;
 }
 
 export default function SamplingWizard({
   storageKey,
   initial,
   onComplete,
-}: {
-  storageKey: string;
-  initial?: SamplingData | null;
-  onComplete: (data: SamplingData) => void;
-}) {
+  assignmentTypes,
+  allowed = true,
+  scheduledDate,
+}: SamplingWizardProps) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<SamplingData>({
+    tipo_asignacion: null,
+    tipo_muestreo: "",
     objetivo: "",
     alcance: "",
     universo: null,
@@ -45,7 +60,37 @@ export default function SamplingWizard({
     fotos: [],
   });
 
-  // Cargar de initial o localStorage
+  // Configuración de pasos según tipo de muestreo
+  const getStepsConfig = () => {
+    const tipo = data.tipo_muestreo;
+
+    if (tipo === "texto") {
+      return {
+        labels: ["Información", "Metodología", "Resultados"],
+        totalSteps: 3
+      };
+    } else if (tipo === "imagen") {
+      return {
+        labels: ["Información", "Metodología", "Evidencias Plan", "Resultados"],
+        totalSteps: 4
+      };
+    } else if (tipo === "mixto") {
+      return {
+        labels: ["Información", "Metodología", "Plan", "Evidencias", "Resultados"],
+        totalSteps: 5
+      };
+    }
+
+    return {
+      labels: ["Información", "Metodología", "Plan", "Evidencias", "Resultados"],
+      totalSteps: 5
+    };
+  };
+
+  const stepsConfig = getStepsConfig();
+  const maxStep = stepsConfig.totalSteps - 1;
+
+  // Cargar datos
   useEffect(() => {
     const ls = localStorage.getItem(storageKey);
     if (initial) {
@@ -54,7 +99,7 @@ export default function SamplingWizard({
       try {
         const parsed = JSON.parse(ls);
         setData((d) => ({ ...d, ...parsed }));
-      } catch {}
+      } catch { }
     }
   }, [initial, storageKey]);
 
@@ -64,68 +109,90 @@ export default function SamplingWizard({
   }, [storageKey, data]);
 
   // Validaciones por paso
-  const stepValid = (s: number) => {
+  const stepValid = (s: number): boolean => {
+    const tipo = data.tipo_muestreo;
+
+    // Paso 0: Información (siempre igual)
     if (s === 0) {
-      return (
-        (data.objetivo || "").trim().length > 2 &&
-        (data.alcance || "").trim().length > 2
+      return !!(
+        data.tipo_muestreo?.trim() &&
+        data.tipo_asignacion?.trim() &&
+        data.objetivo && data.objetivo.trim().length > 2 &&
+        data.alcance && data.alcance.trim().length > 2
       );
     }
+
+    // Paso 1: Metodología (siempre igual)
     if (s === 1) {
-      return (
-        !!data.universo &&
-        data.universo > 0 &&
-        (data.criterios_inclusion || "").trim().length > 0
+      return !!(
+        data.universo && data.universo > 0 &&
+        data.criterios_inclusion?.trim() &&
+        data.metodo?.trim() &&
+        data.tamano && data.tamano > 0
       );
     }
-    if (s === 2) {
-      return (
-        (data.metodo || "").trim().length > 0 &&
-        !!data.tamano &&
-        data.tamano > 0
-      );
+
+    // Pasos siguientes según tipo
+    if (tipo === "texto") {
+      if (s === 2) {
+        return !!(
+          data.hallazgos?.trim() &&
+          data.fecha_inicio?.trim() &&
+          data.fecha_fin?.trim()
+        );
+      }
+    } else if (tipo === "imagen") {
+      if (s === 2) {
+        return (data.imagenes_plan || []).length > 0;
+      }
+      if (s === 3) {
+        return !!(
+          data.hallazgos?.trim() &&
+          data.fecha_inicio?.trim() &&
+          data.fecha_fin?.trim() &&
+          (data.fotos || []).length > 0
+        );
+      }
+    } else if (tipo === "mixto") {
+      if (s === 2) {
+        return !!(
+          data.unidades?.trim() &&
+          data.aleatoriedad?.trim() &&
+          data.responsables?.trim()
+        );
+      }
+      if (s === 3) {
+        return (data.imagenes_plan || []).length > 0;
+      }
+      if (s === 4) {
+        return !!(
+          data.hallazgos?.trim() &&
+          data.fecha_inicio?.trim() &&
+          data.fecha_fin?.trim() &&
+          (data.fotos || []).length > 0
+        );
+      }
     }
-    if (s === 3) {
-      return (
-        (data.unidades || "").trim().length > 0 &&
-        (data.aleatoriedad || "").trim().length > 0 &&
-        (data.responsables || "").trim().length > 0
-      );
-    }
-    if (s === 4) {
-      return (
-        (data.hallazgos || "").trim().length > 0 &&
-        (data.fecha_inicio || "").trim().length > 0 &&
-        (data.fecha_fin || "").trim().length > 0
-      );
-    }
+
     return true;
   };
 
   const canNext = useMemo(() => stepValid(step), [step, data]);
 
-  const allowedStep = useMemo(() => {
-    // Paso máximo alcanzable según validaciones previas
-    let max = 0;
-    for (let i = 0; i <= 4; i++) {
-      if (i === 0 || (i > 0 && stepValid(i - 1))) {
-        if (stepValid(i)) {
-          max = i;
-        } else {
-          break;
-        }
-      }
-    }
-    return Math.max(max, step); // nunca bajar el actual al calcular
-  }, [data, step]);
+  const completedSteps = useMemo(() => {
+    return stepsConfig.labels.map((_, idx) => stepValid(idx));
+  }, [data, stepsConfig.labels]);
 
   const goToStep = (idx: number) => {
-    if (idx <= allowedStep) setStep(idx);
+    if (idx <= maxStep && (idx === 0 || completedSteps[idx - 1])) {
+      setStep(idx);
+    }
   };
 
   const next = () => {
-    if (step < 4 && canNext) setStep(step + 1);
+    if (step < maxStep && canNext) setStep(step + 1);
   };
+
   const back = () => {
     if (step > 0) setStep(step - 1);
   };
@@ -135,372 +202,367 @@ export default function SamplingWizard({
     onComplete(data);
   };
 
-  // Helpers de imagen
-  const readFilesAsDataUrls = async (files: File[], maxEachMB = 1.5, maxCount = 6) => {
-    const selected = files.slice(0, maxCount);
-    const promises = selected.map(
-      (file) =>
-        new Promise<string>((resolve, reject) => {
-          if (file.size > maxEachMB * 1024 * 1024) {
-            reject(new Error(`La imagen ${file.name} supera ${maxEachMB}MB`));
-            return;
-          }
-          const fr = new FileReader();
-          fr.onload = () => resolve(fr.result as string);
-          fr.onerror = () => reject(new Error("No se pudo leer la imagen"));
-          fr.readAsDataURL(file);
-        })
-    );
-    const results: string[] = [];
-    for (const p of promises) {
-      try {
-        const r = await p;
-        results.push(r);
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-    return results;
-  };
+  // Renderizado de campos
+  const renderStep0 = () => (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Tipo de asignación <span className="text-red-500">*</span>
+        </label>
+        <select
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          value={data.tipo_asignacion || ""}
+          onChange={(e) => setData({ ...data, tipo_asignacion: e.target.value })}
+        >
+          <option value="">Seleccione</option>
+          {(assignmentTypes || []).map((t, idx) => (
+            <option key={idx} value={t}>{t}</option>
+          ))}
+        </select>
+      </div>
 
-  // Progreso visual
-  const progressPct = ((step + 1) / 5) * 100;
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Tipo de muestreo <span className="text-red-500">*</span>
+        </label>
+        <select
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          value={data.tipo_muestreo || ""}
+          onChange={(e) => setData({ ...data, tipo_muestreo: e.target.value as any })}
+        >
+          <option value="">Seleccione</option>
+          <option value="texto">Formulario de texto</option>
+          <option value="imagen">Formulario con imágenes</option>
+          <option value="mixto">Mixto (texto + imágenes)</option>
+        </select>
+      </div>
 
-  return (
-    <div>
-      {/* Progress bar */}
-      <div style={{ height: 6, background: "var(--border)", borderRadius: 4, marginBottom: 12 }}>
-        <div
-          style={{
-            width: `${progressPct}%`,
-            height: 6,
-            background: "var(--primary)",
-            borderRadius: 4,
-            transition: "width 250ms ease",
-          }}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Objetivo del muestreo <span className="text-red-500">*</span>
+        </label>
+        <input
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          placeholder="Ej. Verificar cumplimiento de OIT en campo"
+          value={data.objetivo || ""}
+          onChange={(e) => setData({ ...data, objetivo: e.target.value })}
         />
       </div>
 
-      {/* Stepper */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-        {["Definición", "Población", "Muestra", "Plan", "Resultados"].map((label, idx) => (
-          <div
-            key={idx}
-            className={`badge ${idx === step ? "badge-success" : ""}`}
-            style={{
-              cursor: idx <= allowedStep ? "pointer" : "not-allowed",
-              opacity: idx <= allowedStep ? 1 : 0.5,
-              border: "1px solid var(--border)",
-              background: idx === step ? "var(--primary)" : "var(--secondary)",
-              color: idx === step ? "#fff" : "var(--text-primary)",
-            }}
-            onClick={() => goToStep(idx)}
-            title={label}
-          >
-            Paso {idx + 1}: {label}
-          </div>
-        ))}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Alcance <span className="text-red-500">*</span>
+        </label>
+        <input
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          placeholder="Ej. Zonas, periodos y restricciones"
+          value={data.alcance || ""}
+          onChange={(e) => setData({ ...data, alcance: e.target.value })}
+        />
+      </div>
+    </div>
+  );
+
+  const renderStep1 = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Población/Universo <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            min={1}
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="Número total de elementos"
+            value={data.universo ?? ""}
+            onChange={(e) => setData({ ...data, universo: e.target.value ? Number(e.target.value) : null })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Tamaño de la muestra <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            min={1}
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder="N elementos"
+            value={data.tamano ?? ""}
+            onChange={(e) => setData({ ...data, tamano: e.target.value ? Number(e.target.value) : null })}
+          />
+        </div>
       </div>
 
-      {/* Paso 0 */}
-      {step === 0 && (
-        <div className="form-grid" style={{ gap: 12 }}>
-          <div className="input-group">
-            <label className="label">
-              Objetivo del muestreo <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              placeholder="Ej. Verificar cumplimiento de OIT en campo"
-              value={data.objetivo || ""}
-              onChange={(e) => setData({ ...data, objetivo: e.target.value })}
-            />
-            {(data.objetivo || "").trim().length <= 2 && (
-              <small className="error">Requerido</small>
-            )}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Método de muestreo <span className="text-red-500">*</span>
+        </label>
+        <select
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          value={data.metodo || ""}
+          onChange={(e) => setData({ ...data, metodo: e.target.value })}
+        >
+          <option value="">Seleccione</option>
+          <option value="aleatorio_simple">Aleatorio simple</option>
+          <option value="sistematico">Sistemático</option>
+          <option value="estratificado">Estratificado</option>
+          <option value="conglomerados">Por conglomerados</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Criterios de inclusión <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          rows={3}
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          placeholder="Qué elementos entran en la muestra"
+          value={data.criterios_inclusion || ""}
+          onChange={(e) => setData({ ...data, criterios_inclusion: e.target.value })}
+        />
+      </div>
+    </div>
+  );
+
+  const renderStepPlan = () => (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Unidades de muestreo <span className="text-red-500">*</span>
+        </label>
+        <input
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          placeholder="Ej. Puntos, vehículos, equipos…"
+          value={data.unidades || ""}
+          onChange={(e) => setData({ ...data, unidades: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Aleatoriedad/selección <span className="text-red-500">*</span>
+        </label>
+        <input
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          placeholder="Cómo se seleccionan las unidades"
+          value={data.aleatoriedad || ""}
+          onChange={(e) => setData({ ...data, aleatoriedad: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Responsables <span className="text-red-500">*</span>
+        </label>
+        <input
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          placeholder="Nombres y roles"
+          value={data.responsables || ""}
+          onChange={(e) => setData({ ...data, responsables: e.target.value })}
+        />
+      </div>
+    </div>
+  );
+
+  const renderStepEvidenciasPlan = () => (
+    <PhotoUploader
+      photos={data.imagenes_plan || []}
+      onAdd={(photos) => setData({ ...data, imagenes_plan: [...(data.imagenes_plan || []), ...photos] })}
+      onRemove={(index) => {
+        const arr = [...(data.imagenes_plan || [])];
+        arr.splice(index, 1);
+        setData({ ...data, imagenes_plan: arr });
+      }}
+      label="Evidencias del plan de muestreo"
+      required={data.tipo_muestreo !== "texto"}
+    />
+  );
+
+  const renderStepResultados = () => (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Hallazgos preliminares <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          rows={4}
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+          placeholder="Resumen de hallazgos y observaciones"
+          value={data.hallazgos || ""}
+          onChange={(e) => setData({ ...data, hallazgos: e.target.value })}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Fecha inicio <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+            value={data.fecha_inicio || ""}
+            onChange={(e) => setData({ ...data, fecha_inicio: e.target.value })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Fecha fin <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-transparent"
+            value={data.fecha_fin || ""}
+            onChange={(e) => setData({ ...data, fecha_fin: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {data.tipo_muestreo !== "texto" && (
+        <PhotoUploader
+          photos={data.fotos || []}
+          onAdd={(photos) => setData({ ...data, fotos: [...(data.fotos || []), ...photos] })}
+          onRemove={(index) => {
+            const arr = [...(data.fotos || [])];
+            arr.splice(index, 1);
+            setData({ ...data, fotos: arr });
+          }}
+          label="Fotos/Evidencias finales"
+          required
+        />
+      )}
+    </div>
+  );
+
+  // Renderizado dinámico según tipo y paso
+  const renderCurrentStep = () => {
+    const tipo = data.tipo_muestreo;
+
+    if (step === 0) return renderStep0();
+    if (step === 1) return renderStep1();
+
+    if (tipo === "texto") {
+      if (step === 2) return renderStepResultados();
+    } else if (tipo === "imagen") {
+      if (step === 2) return renderStepEvidenciasPlan();
+      if (step === 3) return renderStepResultados();
+    } else if (tipo === "mixto") {
+      if (step === 2) return renderStepPlan();
+      if (step === 3) return renderStepEvidenciasPlan();
+      if (step === 4) return renderStepResultados();
+    }
+
+    return null;
+  };
+
+  // Si no está habilitado, mostrar mensaje estético mejorado
+  if (!allowed) {
+    const formattedDate = scheduledDate
+      ? new Date(scheduledDate).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : "una fecha futura";
+
+    return (
+      <div className="flex flex-col items-center justify-center py-12 px-4">
+        <div className="max-w-lg w-full bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-2xl p-8 text-center shadow-lg">
+          <div className="w-16 h-16 mx-auto mb-6 bg-slate-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
           </div>
-          <div className="input-group">
-            <label className="label">
-              Alcance <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              placeholder="Ej. Zonas, periodos y restricciones"
-              value={data.alcance || ""}
-              onChange={(e) => setData({ ...data, alcance: e.target.value })}
-            />
-            {(data.alcance || "").trim().length <= 2 && (
-              <small className="error">Requerido</small>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">
+            Muestreo No Disponible
+          </h3>
+          <p className="text-slate-700 mb-6 leading-relaxed">
+            El muestreo no está habilitado para este OIT.
+            {scheduledDate ? (
+              <>
+                <br /><br />
+                Está programado para el <strong className="text-slate-900">{formattedDate}</strong>.
+              </>
+            ) : (
+              <>
+                <br /><br />
+                Por favor, revisa que el plan de recursos esté aprobado.
+              </>
             )}
+          </p>
+          <div className="flex flex-col gap-3 text-sm text-slate-600">
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              <span>Espera la fecha programada</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>Asegúrate de aprobar el plan</span>
+            </div>
           </div>
+          <div className="mt-6 pt-4 border-t border-slate-200">
+            <p className="text-xs text-slate-500">
+              Si crees que esto es un error, contacta al administrador.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <StepIndicator
+        steps={stepsConfig.labels}
+        currentStep={step}
+        completedSteps={completedSteps}
+        onStepClick={goToStep}
+      />
+
+      <div className="bg-muted/30 rounded-xl p-6 border border-border">
+        {renderCurrentStep()}
+      </div>
+
+      {!canNext && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <span>Por favor completa todos los campos requeridos para continuar</span>
         </div>
       )}
 
-      {/* Paso 1 */}
-      {step === 1 && (
-        <div className="form-grid" style={{ gap: 12 }}>
-          <div className="input-group">
-            <label className="label">
-              Población/Universo <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              type="number"
-              min={1}
-              placeholder="Número total de elementos"
-              value={data.universo ?? ""}
-              onChange={(e) =>
-                setData({ ...data, universo: e.target.value ? Number(e.target.value) : null })
-              }
-            />
-            {(!data.universo || data.universo <= 0) && (
-              <small className="error">Debe ser mayor a 0</small>
-            )}
-          </div>
-          <div className="input-group">
-            <label className="label">
-              Criterios de inclusión <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <textarea
-              className="input"
-              rows={3}
-              placeholder="Qué elementos entran en la muestra"
-              value={data.criterios_inclusion || ""}
-              onChange={(e) => setData({ ...data, criterios_inclusion: e.target.value })}
-            />
-            {(data.criterios_inclusion || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Paso 2 */}
-      {step === 2 && (
-        <div className="form-grid" style={{ gap: 12 }}>
-          <div className="input-group">
-            <label className="label">
-              Método de muestreo <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <select
-              className="input"
-              value={data.metodo || ""}
-              onChange={(e) => setData({ ...data, metodo: e.target.value })}
-            >
-              <option value="">Seleccione</option>
-              <option value="aleatorio_simple">Aleatorio simple</option>
-              <option value="sistematico">Sistemático</option>
-              <option value="estratificado">Estratificado</option>
-              <option value="conglomerados">Por conglomerados</option>
-            </select>
-            {(data.metodo || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-          <div className="input-group">
-            <label className="label">
-              Tamaño de la muestra <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              type="number"
-              min={1}
-              placeholder="N elementos"
-              value={data.tamano ?? ""}
-              onChange={(e) =>
-                setData({ ...data, tamano: e.target.value ? Number(e.target.value) : null })
-              }
-            />
-            {(!data.tamano || data.tamano <= 0) && (
-              <small className="error">Debe ser mayor a 0</small>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Paso 3 */}
-      {step === 3 && (
-        <div className="form-grid" style={{ gap: 12 }}>
-          <div className="input-group">
-            <label className="label">
-              Unidades de muestreo <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              placeholder="Ej. Puntos, vehículos, equipos…"
-              value={data.unidades || ""}
-              onChange={(e) => setData({ ...data, unidades: e.target.value })}
-            />
-            {(data.unidades || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-          <div className="input-group">
-            <label className="label">
-              Aleatoriedad/selección <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              placeholder="Cómo se seleccionan las unidades"
-              value={data.aleatoriedad || ""}
-              onChange={(e) => setData({ ...data, aleatoriedad: e.target.value })}
-            />
-            {(data.aleatoriedad || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-          <div className="input-group">
-            <label className="label">
-              Responsables <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              placeholder="Nombres y roles"
-              value={data.responsables || ""}
-              onChange={(e) => setData({ ...data, responsables: e.target.value })}
-            />
-            {(data.responsables || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-          <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-            <label className="label">Evidencia del plan (imágenes opcionales, máx. 6 × 1.5MB)</label>
-            <input
-              className="input"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={async (e) => {
-                const files = Array.from(e.target.files || []);
-                const urls = await readFilesAsDataUrls(files);
-                setData({ ...data, imagenes_plan: [...(data.imagenes_plan || []), ...urls] });
-              }}
-            />
-            {(data.imagenes_plan || []).length > 0 && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-                {(data.imagenes_plan || []).map((src, idx) => (
-                  <div key={idx} style={{ position: "relative" }}>
-                    <img src={src} alt={`plan-${idx}`} style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ position: "absolute", top: 2, right: 2, padding: "2px 6px", fontSize: 12 }}
-                      onClick={() => {
-                        const arr = [...(data.imagenes_plan || [])];
-                        arr.splice(idx, 1);
-                        setData({ ...data, imagenes_plan: arr });
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Paso 4 */}
-      {step === 4 && (
-        <div className="form-grid" style={{ gap: 12 }}>
-          <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-            <label className="label">
-              Hallazgos preliminares <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <textarea
-              className="input"
-              rows={4}
-              placeholder="Resumen de hallazgos y observaciones"
-              value={data.hallazgos || ""}
-              onChange={(e) => setData({ ...data, hallazgos: e.target.value })}
-            />
-            {(data.hallazgos || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-          <div className="input-group">
-            <label className="label">
-              Fecha inicio <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              type="date"
-              value={data.fecha_inicio || ""}
-              onChange={(e) => setData({ ...data, fecha_inicio: e.target.value })}
-            />
-            {(data.fecha_inicio || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-          <div className="input-group">
-            <label className="label">
-              Fecha fin <span style={{ color: "#d33" }}>*</span>
-            </label>
-            <input
-              className="input"
-              type="date"
-              value={data.fecha_fin || ""}
-              onChange={(e) => setData({ ...data, fecha_fin: e.target.value })}
-            />
-            {(data.fecha_fin || "").trim().length === 0 && (
-              <small className="error">Requerido</small>
-            )}
-          </div>
-          <div className="input-group" style={{ gridColumn: "1 / -1" }}>
-            <label className="label">Fotos/Evidencias (opcionales, máx. 6 × 1.5MB)</label>
-            <input
-              className="input"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={async (e) => {
-                const files = Array.from(e.target.files || []);
-                const urls = await readFilesAsDataUrls(files);
-                setData({ ...data, fotos: [...(data.fotos || []), ...urls] });
-              }}
-            />
-            {(data.fotos || []).length > 0 && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-                {(data.fotos || []).map((src, idx) => (
-                  <div key={idx} style={{ position: "relative" }}>
-                    <img src={src} alt={`foto-${idx}`} style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 6, border: "1px solid var(--border)" }} />
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ position: "absolute", top: 2, right: 2, padding: "2px 6px", fontSize: 12 }}
-                      onClick={() => {
-                        const arr = [...(data.fotos || [])];
-                        arr.splice(idx, 1);
-                        setData({ ...data, fotos: arr });
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+      <div className="flex justify-between items-center">
         <div>
           {step > 0 && (
-            <button className="btn btn-secondary" onClick={back}>
+            <button
+              onClick={back}
+              className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted transition-colors"
+            >
               Volver
             </button>
           )}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {step < 4 && (
-            <button className="btn btn-primary" onClick={next} disabled={!canNext}>
+
+        <div className="flex gap-2">
+          {step < maxStep && (
+            <button
+              onClick={next}
+              disabled={!canNext || !allowed}
+              className="px-6 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
               Siguiente
             </button>
           )}
-          {step === 4 && (
-            <button className="btn btn-success" onClick={finish} disabled={!canNext}>
+          {step === maxStep && (
+            <button
+              onClick={finish}
+              disabled={!canNext || !allowed}
+              className="px-6 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              <CheckCircle size={18} />
               Finalizar muestreo
             </button>
           )}

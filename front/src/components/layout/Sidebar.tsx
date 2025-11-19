@@ -1,56 +1,89 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Receipt, Wrench, MessageSquare, User, X, Bell } from "lucide-react";
+import { Receipt, Wrench, MessageSquare, User, Bell, ChevronRight, ChevronLeft, LogOut } from "lucide-react";
+import Button from "../ui/Button";
+import { cn } from "../../lib/utils";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   isMobile?: boolean;
   onClose?: () => void;
   onNavigate?: () => void;
+  onCollapse?: (collapsed: boolean) => void;
 }
 
-export default function Sidebar({ isMobile = false, onClose, onNavigate, className = "", ...rest }: SidebarProps) {
+export default function Sidebar({ isMobile = false, onClose, onNavigate, onCollapse, className = "", ...rest }: SidebarProps) {
   const { pathname } = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (onCollapse) {
+      onCollapse(isCollapsed);
+    }
+  }, [isCollapsed, onCollapse]);
 
   const menuItems = [
-    { path: "/dashboard/oit", icon: Receipt, label: "OITs" },
-    { path: "/dashboard/alerts", icon: Bell, label: "Alertas" },
-    { path: "/dashboard/resources", icon: Wrench, label: "Recursos" },
-    { path: "/dashboard/chat", icon: MessageSquare, label: "Asistente" },
-    { path: "/dashboard/profile", icon: User, label: "Mi Perfil" },
+    { path: "/dashboard/oit", label: "OITs", icon: Receipt },
+    { path: "/dashboard/alerts", label: "Alertas", icon: Bell },
+    { path: "/dashboard/resources", label: "Recursos", icon: Wrench },
+    { path: "/dashboard/chat", label: "Asistente", icon: MessageSquare },
+    { path: "/dashboard/profile", label: "Mi Perfil", icon: User },
   ];
 
   return (
-    <div className={`sidebar-shell ${className}`.trim()} {...rest}>
-      <div className="sidebar-header">
-        <img src="/logo.png" alt="ALS Logo" className="sidebar-logo" />
-        {isMobile && (
-          <button type="button" className="sidebar-close-btn" onClick={onClose} aria-label="Cerrar menú">
-            <X size={18} />
-          </button>
+    <div
+      className={cn(
+        "flex flex-col h-screen bg-card border-r",
+        isCollapsed ? "w-20" : "w-64",
+        className
+      )}
+      {...rest}
+    >
+      <div className={cn("flex items-center p-4", isCollapsed ? "justify-center" : "justify-between")}>
+        {!isCollapsed ? (
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="ALS" className="h-6 w-auto" />
+          </div>
+        ) : (
+          <div className="w-6" />
         )}
+        <Button variant="outline" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className={cn("h-8 w-8", isCollapsed ? "mx-auto" : "ml-auto")}>
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
       </div>
 
-      <div className="sidebar-section-label">Menú</div>
-
-      <nav className="sidebar-nav">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const active = pathname.startsWith(item.path);
-
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`sidebar-link ${active ? "is-active" : ""}`.trim()}
-              onClick={() => onNavigate?.()}
-            >
-              {active && <span className="sidebar-link-indicator" />}
-              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto p-2 mt-2">
+        <ul className="space-y-1">
+          {menuItems.map((item) => {
+            const active = pathname.startsWith(item.path);
+            const Icon = item.icon;
+            return (
+              <li key={item.path} className={cn("px-2", isCollapsed && "flex justify-center")}>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center py-2.5 text-sm font-medium rounded-lg transition-colors",
+                    isCollapsed ? "justify-center w-10 h-10" : "w-full px-3",
+                    active ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-accent/40"
+                  )}
+                  title={isCollapsed ? item.label : undefined}
+                  onClick={() => onNavigate?.()}
+                >
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  {!isCollapsed && <span className="ml-3 truncate">{item.label}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
+
+      {!isCollapsed && (
+        <div className="p-4 mt-auto">
+          <Button variant="outline" className="w-full justify-center" onClick={onClose}>
+            <LogOut className="h-4 w-4 mr-2" />Cerrar menú
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

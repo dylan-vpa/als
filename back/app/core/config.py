@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     api_prefix: str = Field(default="/api/v1")
     backend_cors_origins: list[str] = Field(default_factory=lambda: [
         "http://localhost:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
     ])
     
     # Database configuration (override with DATABASE_URL env or fallback to postgres_*)
@@ -25,6 +28,10 @@ class Settings(BaseSettings):
     postgres_user: str = Field(default="paradixe")
     postgres_password: str = Field(default="paradixe123")
     postgres_db: str = Field(default="paradixe_db")
+    
+    # Resend email configuration
+    resend_api_key: str = Field(default="")
+    resend_from: str = Field(default="")
     
     @property
     def postgres_url(self) -> str:

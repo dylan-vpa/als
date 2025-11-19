@@ -88,6 +88,7 @@ export default function OitPlanSection({
 
   const [notes, setNotes] = useState<string>(() => plan.notes ?? doc.approval_notes ?? "");
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [showEditInputs, setShowEditInputs] = useState<boolean>(false);
 
   useEffect(() => {
     const source = plan.scheduled_datetime || doc.approved_schedule_date || null;
@@ -119,6 +120,7 @@ export default function OitPlanSection({
 
   const handleGenerate = () => {
     setFeedbackError(null);
+    setShowEditInputs(true); // Mostrar inputs al generar plan
     onGeneratePlan({
       scheduledDatetime: combineDateTime(scheduledDate, scheduledTime),
       notes: notes.trim() ? notes.trim() : null
@@ -132,9 +134,19 @@ export default function OitPlanSection({
     }
     if (!approved && !notes.trim()) {
       setFeedbackError("Agrega notas para que la IA entienda los ajustes necesarios.");
+      setShowEditInputs(true); // Mostrar inputs si falta feedback
       return;
     }
     setFeedbackError(null);
+
+    if (approved) {
+      // Al aprobar, ocultar inputs y aplicar
+      setShowEditInputs(false);
+    } else {
+      // Al solicitar ajustes, mostrar inputs
+      setShowEditInputs(true);
+    }
+
     onConfirmPlan(approved, {
       scheduledDatetime: combineDateTime(scheduledDate, scheduledTime),
       notes: notes.trim() ? notes.trim() : null
@@ -222,52 +234,54 @@ export default function OitPlanSection({
         )}
       </section>
 
-      <section style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(240px, min(100%, 1fr)))" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#475569" }}>
-          Fecha programada
-          <input
-            type="date"
-            value={scheduledDate}
-            onChange={(e) => setScheduledDate(e.target.value)}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #d1d5db",
-              fontSize: 14
-            }}
-          />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#475569" }}>
-          Hora programada
-          <input
-            type="time"
-            value={scheduledTime}
-            onChange={(e) => setScheduledTime(e.target.value)}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #d1d5db",
-              fontSize: 14
-            }}
-          />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#475569" }}>
-          Notas / Retroalimentación
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={4}
-            placeholder="Describe ajustes, restricciones o feedback para la IA"
-            style={{
-              padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid #d1d5db",
-              fontSize: 14,
-              resize: "vertical"
-            }}
-          />
-        </label>
-      </section>
+      {showEditInputs && (
+        <section style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fit, minmax(240px, min(100%, 1fr)))" }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#475569" }}>
+            Fecha programada
+            <input
+              type="date"
+              value={scheduledDate}
+              onChange={(e) => setScheduledDate(e.target.value)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid #d1d5db",
+                fontSize: 14
+              }}
+            />
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#475569" }}>
+            Hora programada
+            <input
+              type="time"
+              value={scheduledTime}
+              onChange={(e) => setScheduledTime(e.target.value)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid #d1d5db",
+                fontSize: 14
+              }}
+            />
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#475569" }}>
+            Notas / Retroalimentación
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              placeholder="Describe ajustes, restricciones o feedback para la IA"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 12,
+                border: "1px solid #d1d5db",
+                fontSize: 14,
+                resize: "vertical"
+              }}
+            />
+          </label>
+        </section>
+      )}
 
       {feedbackError && (
         <div style={{ fontSize: 12, color: "#b91c1c" }}>{feedbackError}</div>

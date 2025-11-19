@@ -4,6 +4,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Modal from "../ui/Modal";
 import { useNotifications } from "../../contexts/NotificationsContext";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
 
 interface Props {
   title: string;
@@ -112,10 +114,10 @@ export default function DashboardHeader({ title, actions, showSidebarToggle = fa
       </div>
 
       <div className="dashboard-header-right">
-        <button
-          type="button"
-          className="dashboard-header-icon"
+        <Button
           aria-label="Notificaciones"
+          variant="outline"
+          size="icon"
           onClick={handleNotificationsClick}
           style={{ position: "relative" }}
         >
@@ -140,10 +142,10 @@ export default function DashboardHeader({ title, actions, showSidebarToggle = fa
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
-        </button>
-        <button type="button" className="dashboard-header-icon" aria-label="Configuración">
+        </Button>
+        <Button aria-label="Configuración" variant="outline" size="icon">
           <Settings size={18} />
-        </button>
+        </Button>
         <div className="dashboard-header-user">
           <div className="dashboard-header-avatar">
             {user?.full_name ? user.full_name.charAt(0).toUpperCase() : user?.email.charAt(0).toUpperCase()}
@@ -162,9 +164,8 @@ export default function DashboardHeader({ title, actions, showSidebarToggle = fa
         actions={null}
       >
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <input
-            ref={modalInputRef}
-            className="input"
+          <Input
+            ref={modalInputRef as any}
             placeholder="Escribe para buscar secciones"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

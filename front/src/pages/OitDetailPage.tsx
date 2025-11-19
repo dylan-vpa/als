@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import { apiClient, OitDocumentOut, RecommendationsResponse, DocumentCheckResponse } from "../services/api";
+import Button from "../components/ui/Button";
+import { apiClient, OitDocumentOut, RecommendationsResponse, DocumentCheckResponse, SamplingStatus } from "../services/api";
 import type { SamplingData } from "../components/oit/SamplingWizard";
 import OitDetailHeader from "../components/oit/detail/OitDetailHeader";
 import OitDetailSummarySection from "../components/oit/detail/OitDetailSummarySection";
@@ -32,22 +33,39 @@ export default function OitDetailPage() {
   const { id } = useParams();
   const [doc, setDoc] = useState<OitDocumentOut | null>(null);
   const [recs, setRecs] = useState<RecommendationsResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<"resumen" | "hallazgos" | "plan">("resumen");
+  const [activeTab, setActiveTab] = useState<"resumen" | "hallazgos" | "plan" | "muestreo" | "analisis" | "resultados">("resumen");
+  const navigate = useNavigate();
 
   // Muestreo + Informe state
   const [sampling, setSampling] = useState<SamplingData | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingHtml, setDownloadingHtml] = useState(false);
   const [downloadingBundle, setDownloadingBundle] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ type: "success" | "warning" | "error"; message: string } | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [confirmingPlan, setConfirmingPlan] = useState(false);
+  const [samplingStatus, setSamplingStatus] = useState<SamplingStatus | null>(null);
+  const [uploadingAnalysis, setUploadingAnalysis] = useState(false);
+  const [exportDownloading, setExportDownloading] = useState(false);
+  const analysisFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [online, setOnline] = useState<boolean>(navigator.onLine);
 
   // Verificación con Llama 3.2 3B
   const [checkingDocument, setCheckingDocument] = useState(false);
   const [checkResult, setCheckResult] = useState<DocumentCheckResponse | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("llama3.2:3b");
+
+  useEffect(() => {
+    const onStatus = () => setOnline(navigator.onLine);
+    window.addEventListener("online", onStatus);
+    window.addEventListener("offline", onStatus);
+    return () => {
+      window.removeEventListener("online", onStatus);
+      window.removeEventListener("offline", onStatus);
+    };
+  }, []);
 
   useEffect(() => {
     const docId = Number(id);
@@ -64,7 +82,7 @@ export default function OitDetailPage() {
       }
     })();
   }, [id]);
-  
+
   // Cargar modelos disponibles
   useEffect(() => {
     async function fetchModels() {
@@ -93,8 +111,22 @@ export default function OitDetailPage() {
     if (raw) {
       try {
         setSampling(JSON.parse(raw));
-      } catch {}
+      } catch { }
     }
+  }, [id]);
+
+  // Estado de muestreo/análisis desde backend
+  useEffect(() => {
+    const docIdNum = Number(id);
+    if (!docIdNum) return;
+    (async () => {
+      try {
+        const status = await apiClient.getSamplingStatus(docIdNum);
+        setSamplingStatus(status);
+      } catch (e) {
+        // Si aún no existe estado, ignorar
+      }
+    })();
   }, [id]);
 
   const baseCheckOk = !!doc && doc.status === "check" && (doc.alerts?.length || 0) === 0 && (doc.missing?.length || 0) === 0;
@@ -127,6 +159,72 @@ export default function OitDetailPage() {
       setError(e?.message || "No se pudo descargar el informe");
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadReportHtml = async () => {
+    const docIdNum = Number(id);
+    if (!docIdNum || !sampling) return;
+    setError(null);
+    setDownloadingHtml(true);
+    try {
+      const blob = await apiClient.downloadFinalReportHtml(
+        docIdNum,
+        sampling as Record<string, any>
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `informe_final_oit_${docIdNum}.html`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      console.error(e);
+      setError(e?.message || "No se pudo descargar el informe HTML");
+    } finally {
+      setDownloadingHtml(false);
+    }
+  };
+
+  const handleDownloadSamplingExport = async () => {
+    const docIdNum = Number(id);
+    if (!docIdNum) return;
+    setError(null);
+    setExportDownloading(true);
+    try {
+      const blob = await apiClient.downloadSamplingExport(docIdNum);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `muestreo_oit_${docIdNum}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      console.error(e);
+      setError(e?.message || "No se pudo descargar el muestreo");
+    } finally {
+      setExportDownloading(false);
+    }
+  };
+
+  const handleUploadAnalysisFile = async (file: File | null) => {
+    const docIdNum = Number(id);
+    if (!docIdNum || !file) return;
+    setError(null);
+    setUploadingAnalysis(true);
+    try {
+      const status = await apiClient.uploadAnalysis(docIdNum, file);
+      setSamplingStatus(status);
+      setBanner({ type: "success", message: "Análisis subido. Ya puedes generar el informe final." });
+    } catch (e: any) {
+      console.error(e);
+      setError(e?.message || "No se pudo subir el análisis");
+    } finally {
+      setUploadingAnalysis(false);
     }
   };
 
@@ -263,86 +361,174 @@ export default function OitDetailPage() {
   };
 
   return (
-    <DashboardLayout
-      title="Detalle OIT"
-      contentStyle={{ padding: "0 clamp(16px, 4vw, 40px) 32px", width: "100%", maxWidth: "100%" }}
-    >
-      <div className="dashboard-subheader dashboard-subheader--wide dashboard-subheader--static" style={{ paddingTop: 0 }}>
+    <DashboardLayout title={`OIT #${doc.id} - ${doc.original_name || doc.filename}`}>
+      <div className="space-y-6">
+        {/* Header unificado y mejorado */}
         <OitDetailHeader
           doc={doc}
           statusLabel={statusLabel}
-          sampling={sampling}
+          sampling={samplingStatus?.final_report_allowed ? sampling : null}
+          offline={!online}
           checkingDocument={checkingDocument}
           downloading={downloading}
+          downloadingHtml={downloadingHtml}
           downloadingBundle={downloadingBundle}
           onCheckDocument={handleCheckDocument}
           onDownloadReport={handleDownloadReport}
+          onDownloadReportHtml={handleDownloadReportHtml}
           onDownloadBundle={handleDownloadBundle}
         />
-      </div>
 
-      {banner && bannerStyle && (
-        <div
-          style={{
-            margin: "0 0 24px",
-            padding: "12px 18px",
-            borderRadius: 16,
-            background: bannerStyle.bg,
-            border: `1px solid ${bannerStyle.border}`,
-            color: bannerStyle.color,
-            fontSize: 14,
-            display: "flex",
-            alignItems: "center",
-            gap: 12
-          }}
-        >
-          <span style={{ fontWeight: 600 }}>{banner.type === "success" ? "Cumple" : banner.type === "warning" ? "Revisión necesaria" : "No cumple"}</span>
-          <span style={{ flex: 1 }}>{banner.message}</span>
-        </div>
-      )}
+        {/* Contenido principal con mejor diseño */}
+        <div className="space-y-6">
+          {/* Resumen con mejor estética */}
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <OitDetailSummarySection doc={doc} statusColor={statusColor} statusLabel={statusLabel} />
+          </div>
 
-      {error && (
-        <div
-          style={{
-            margin: "0 0 16px",
-            padding: "12px 18px",
-            borderRadius: 12,
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            color: "#b91c1c",
-            fontSize: 13
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <OitDetailSummarySection doc={doc} statusColor={statusColor} statusLabel={statusLabel} />
-
-        <OitDetailTabs activeTab={activeTab} onChange={setActiveTab}>
-          {activeTab === "resumen" && (
-            <OitResumenTab doc={doc} statusColor={statusColor} statusLabel={statusLabel} />
-          )}
-          {activeTab === "hallazgos" && (
-            <OitHallazgosSection
-              alerts={hallazgos.alerts}
-              missing={hallazgos.missing}
-              evidence={hallazgos.evidence}
+          {/* Tabs con diseño mejorado */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <OitDetailTabs
+              activeTab={activeTab}
+              onChange={(tab) => {
+                if (tab === "muestreo") {
+                  navigate(`/dashboard/oit/${doc.id}/muestreo`);
+                  return;
+                }
+                setActiveTab(tab);
+              }}
             />
-          )}
-          {activeTab === "plan" && (
-            <OitPlanSection
-              doc={doc}
-              recs={recs}
-              canViewPlan={canViewPlan}
-              loading={planLoading}
-              confirming={confirmingPlan}
-              onGeneratePlan={handleGeneratePlan}
-              onConfirmPlan={handleConfirmPlan}
-            />
-          )}
-        </OitDetailTabs>
+            
+            <div className="p-6">
+              {activeTab === "resumen" && (
+                <OitResumenTab doc={doc} statusColor={statusColor} statusLabel={statusLabel} />
+              )}
+              {activeTab === "hallazgos" && (
+                <OitHallazgosSection alerts={hallazgos.alerts} missing={hallazgos.missing} evidence={hallazgos.evidence} />
+              )}
+              {activeTab === "plan" && (
+                <OitPlanSection
+                  doc={doc}
+                  recs={recs}
+                  canViewPlan={canViewPlan}
+                  loading={planLoading}
+                  confirming={confirmingPlan}
+                  onGeneratePlan={handleGeneratePlan}
+                  onConfirmPlan={handleConfirmPlan}
+                />
+              )}
+              {activeTab === "analisis" && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900">Muestreo y análisis</h3>
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      {samplingStatus?.completed_at && (
+                        <span>Completado: {new Date(samplingStatus.completed_at).toLocaleString()}</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                      <h4 className="font-medium text-slate-900 mb-2">Exportar muestreo</h4>
+                      <p className="text-sm text-slate-600 mb-3">Descarga los datos del muestreo</p>
+                      <Button 
+                        variant="default" 
+                        onClick={handleDownloadSamplingExport} 
+                        disabled={!samplingStatus?.export_available || exportDownloading}
+                        className="w-full"
+                      >
+                        {exportDownloading ? "Descargando…" : "Descargar muestreo"}
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                      <h4 className="font-medium text-slate-900 mb-2">Subir análisis</h4>
+                      <p className="text-sm text-slate-600 mb-3">Carga el archivo de análisis en PDF</p>
+                      <Button 
+                        variant="secondary" 
+                        onClick={() => analysisFileInputRef.current?.click()}
+                        className="w-full"
+                      >
+                        Subir análisis (.pdf)
+                      </Button>
+                      <input 
+                        ref={analysisFileInputRef} 
+                        type="file" 
+                        accept=".pdf,application/pdf" 
+                        onChange={(e) => handleUploadAnalysisFile(e.target.files?.[0] || null)} 
+                        style={{ display: "none" }} 
+                      />
+                      {uploadingAnalysis && (
+                        <p className="text-xs text-slate-500 mt-2">Subiendo análisis…</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {samplingStatus?.final_report_allowed ? (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-sm text-green-800 font-medium">✓ Análisis listo. Informe final habilitado.</p>
+                    </div>
+                  ) : (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">El informe final se habilita al subir el análisis.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {activeTab === "resultados" && (
+                <div className="space-y-4">
+                  {!online && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm text-amber-800 font-medium">Sin conexión</span>
+                      </div>
+                      <p className="text-sm text-amber-700 mt-1">Las acciones que requieren conexión están deshabilitadas.</p>
+                    </div>
+                  )}
+                  
+                  {banner && bannerStyle && (
+                    <div 
+                      className="rounded-lg p-4 border flex items-center gap-3" 
+                      style={{ background: bannerStyle.bg, borderColor: bannerStyle.border, color: bannerStyle.color }}
+                    >
+                      <span className="font-semibold">
+                        {banner.type === "success" ? "✓ Cumple" : banner.type === "warning" ? "⚠ Revisión necesaria" : "✗ No cumple"}
+                      </span>
+                      <span className="flex-1">{banner.message}</span>
+                    </div>
+                  )}
+                  
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-red-700 text-sm">{error}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="primary" 
+                      onClick={handleDownloadReport} 
+                      disabled={!sampling || downloading || !online}
+                      className="flex-1"
+                    >
+                      {downloading ? "Generando…" : "Descargar informe"}
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      onClick={handleDownloadReportHtml} 
+                      disabled={!sampling || downloadingHtml || !online}
+                      className="flex-1"
+                    >
+                      {downloadingHtml ? "Generando…" : "Informe (HTML)"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

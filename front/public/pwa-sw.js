@@ -1,49 +1,114 @@
-const CACHE_NAME = "als-oit-cache-v1";
-const CORE_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/logo.png"
-];
+const CACHE_VERSION = "als-pwa-v1";
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())
+    (async () => {
+      const cache = await caches.open(STATIC_CACHE);
+      await cache.addAll(["/", "/index.html"]);
+    })()
   );
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (!key.startsWith(CACHE_VERSION)) {
             return caches.delete(key);
           }
         })
-      )
-    ).then(() => self.clients.claim())
+      );
+      self.clients.claim();
+    })()
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  const dest = req.destination;
+
+  const cacheFirst = async () => {
+    const cache = await caches.open(STATIC_CACHE);
+    const cached = await cache.match(req);
+    if (cached) return cached;
+    try {
+      const res = await fetch(req);
+      if (res && res.ok) cache.put(req, res.clone());
+      return res;
+    } catch (e) {
+      return cached || Promise.reject(e);
+    }
+  };
+
+  const networkFirstApi = async () => {
+    const cache = await caches.open(RUNTIME_CACHE);
+    try {
+      const res = await fetch(req);
+      if (res && res.ok) cache.put(req, res.clone());
+      return res;
+    } catch (e) {
+      const cached = await cache.match(req);
+      if (cached) return cached;
+      throw e;
+    }
+  };
+
+  const networkFirstDoc = async () => {
+    const cache = await caches.open(STATIC_CACHE);
+    try {
+      const res = await fetch(req);
+      if (res && res.ok) cache.put("/index.html", res.clone());
+      return res;
+    } catch (e) {
+      const cached = await cache.match("/index.html");
+      if (cached) return cached;
+      throw e;
+    }
+  };
+
+  if (
+    dest === "script" ||
+    dest === "style" ||
+    dest === "image" ||
+    dest === "font" ||
+    url.pathname.startsWith("/assets/")
+  ) {
+    event.respondWith(cacheFirst());
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
+  if (url.pathname.startsWith("/api/v1/")) {
+    event.respondWith(networkFirstApi());
+    return;
+  }
 
-      return cachedResponse || fetchPromise;
-    })
-  );
+  if (req.mode === "navigate") {
+    event.respondWith(networkFirstDoc());
+    return;
+  }
+});
+
+// Precaching por mensaje
+self.addEventListener("message", (event) => {
+  const data = event.data || {};
+  if (data && data.type === "precache" && Array.isArray(data.urls)) {
+    event.waitUntil(
+      (async () => {
+        try {
+          const cache = await caches.open(RUNTIME_CACHE);
+          await cache.addAll(data.urls);
+        } catch (e) {
+          // ignorar errores de precache
+        }
+      })()
+    );
+  }
 });

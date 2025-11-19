@@ -3,9 +3,10 @@ import DashboardLayout from "../components/layout/DashboardLayout";
 import { MessageCircle } from "lucide-react";
 import Button from "../components/ui/Button";
 import { apiClient } from "../services/api";
-import AiChatHeader from "../components/aichat/AiChatHeader";
 import AiChatTranscript from "../components/aichat/AiChatTranscript";
 import AiChatInputBar from "../components/aichat/AiChatInputBar";
+import * as Select from "@radix-ui/react-select";
+import { Sparkles } from "lucide-react";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -22,12 +23,14 @@ export default function AiChatPage() {
   const [selectedModel, setSelectedModel] = useState<string>("llama3.2:3b");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [loadingModels, setLoadingModels] = useState(false);
+  const [models, setModels] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchModels() {
       setLoadingModels(true);
       try {
         const response = await apiClient.getAvailableModels();
+        setModels(response.models);
         // Si llama3.2:3b está disponible, seleccionarlo por defecto
         if (response.models.includes("llama3.2:3b")) {
           setSelectedModel("llama3.2:3b");
@@ -84,22 +87,22 @@ export default function AiChatPage() {
   }
 
   return (
-    <DashboardLayout
-      title="Asistente"
-      contentStyle={{ padding: "0 40px 32px 40px", overflow: "visible" }}
-    >
-      <AiChatHeader selectedModel={selectedModel} />
+    <DashboardLayout title="Asistente">
 
-      <AiChatTranscript messages={messages} error={error} endRef={messagesEndRef} />
+      <div className="bg-card rounded-xl p-5">
+        <AiChatTranscript messages={messages} error={error} endRef={messagesEndRef} />
+      </div>
 
-      <AiChatInputBar
-        value={input}
-        placeholder={placeholderText}
-        loading={loading}
-        onChange={setInput}
-        onSubmit={send}
-        onKeyDown={onKeyDown}
-      />
+      <div className="mt-4">
+        <AiChatInputBar
+          value={input}
+          placeholder={placeholderText}
+          loading={loading}
+          onChange={setInput}
+          onSubmit={send}
+          onKeyDown={onKeyDown}
+        />
+      </div>
     </DashboardLayout>
   );
 }

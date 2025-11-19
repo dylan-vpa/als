@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { apiClient, OitDocumentOut } from "../services/api";
-import { FileText, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { FileText, AlertTriangle, CheckCircle2, Clock, SlidersHorizontal, FilePlus } from "lucide-react";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import OitToolbar from "../components/oit/list/OitToolbar";
 import OitFilterPanel from "../components/oit/list/OitFilterPanel";
 import OitActiveFilters from "../components/oit/list/OitActiveFilters";
 import OitStatsGrid, { OitStatCard } from "../components/oit/list/OitStatsGrid";
 import OitListSection from "../components/oit/list/OitListSection";
 import OitUploadModal from "../components/oit/list/OitUploadModal";
+import Button from "../components/ui/Button";
 
 export default function OitListPage() {
   const [items, setItems] = useState<OitDocumentOut[]>([]);
@@ -101,7 +101,7 @@ export default function OitListPage() {
       caption: "Total histórico",
       accent: "#4f46e5",
       icon: FileText,
-      badge: stats.lastUpdated ? `Actualizado ${new Date(stats.lastUpdated).toLocaleDateString()}` : "Sin movimientos recientes",
+      badge: stats.lastUpdated ? `Actualizado ${new Date(stats.lastUpdated).toLocaleDateString()} ` : "Sin movimientos recientes",
       progress: stats.total ? 100 : 0,
     },
     {
@@ -214,49 +214,59 @@ export default function OitListPage() {
   }
 
   return (
-    <DashboardLayout title="OITs">
+    <DashboardLayout
+      title="OITs"
+      actions={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (!filterOpen) {
+                setPendingFilterType(filterType);
+                setPendingFilterStatus(filterStatus);
+                setFilterOpen(true);
+              } else {
+                setFilterOpen(false);
+              }
+            }}
+            className="h-11 w-11 rounded-xl border bg-muted/40"
+            aria-label="Abrir filtros"
+          >
+            <SlidersHorizontal size={18} />
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => setOpenUpload(true)}
+            className="inline-flex items-center gap-2"
+          >
+            <FilePlus size={16} /> Subir OIT
+          </Button>
+        </div>
+      }
+    >
       <div className="oit-page">
         {uploadBanner && (
           <div
-            style={{
-              marginBottom: 24,
-              padding: "12px 18px",
-              borderRadius: 16,
-              background: uploadBanner.type === "success" ? "#ecfdf5" : uploadBanner.type === "warning" ? "#fff7ed" : "#fef2f2",
-              border: `1px solid ${uploadBanner.type === "success" ? "#bbf7d0" : uploadBanner.type === "warning" ? "#fed7aa" : "#fecaca"}`,
-              color: uploadBanner.type === "success" ? "#065f46" : uploadBanner.type === "warning" ? "#9a3412" : "#b91c1c",
-              fontSize: 14,
-              display: "flex",
-              alignItems: "center",
-              gap: 12
-            }}
+            className={
+              `mb - 6 rounded - xl border p - 4 text - sm flex items - center gap - 3 ` +
+              (uploadBanner.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : uploadBanner.type === "warning"
+                  ? "border-orange-200 bg-orange-50 text-orange-800"
+                  : "border-red-200 bg-red-50 text-red-700")
+            }
           >
-            <span style={{ fontWeight: 600 }}>
+            <span className="font-semibold">
               {uploadBanner.type === "success" ? "OIT cumple" : uploadBanner.type === "warning" ? "OIT con observaciones" : "OIT no cumple"}
             </span>
-            <span style={{ flex: 1 }}>{uploadBanner.message}</span>
-            <button
-              type="button"
-              onClick={() => setUploadBanner(null)}
-              style={{ background: "transparent", border: "none", color: "inherit", cursor: "pointer", fontWeight: 600 }}
-            >
+            <span className="flex-1">{uploadBanner.message}</span>
+            <button type="button" onClick={() => setUploadBanner(null)} className="font-semibold hover:underline">
               Cerrar
             </button>
           </div>
         )}
 
-        <OitToolbar
-          onToggleFilters={() => {
-            if (!filterOpen) {
-              setPendingFilterType(filterType);
-              setPendingFilterStatus(filterStatus);
-              setFilterOpen(true);
-            } else {
-              setFilterOpen(false);
-            }
-          }}
-          onOpenUpload={() => setOpenUpload(true)}
-        />
+
 
         {filterOpen && (
           <OitFilterPanel

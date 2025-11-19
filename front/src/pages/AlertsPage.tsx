@@ -59,12 +59,7 @@ export default function AlertsPage() {
   }
 
   const actions = (
-    <Button
-      variant="secondary"
-      disabled={!notifications.length || !unreadCount}
-      onClick={handleMarkAll}
-      style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-    >
+    <Button type="button" variant="secondary" disabled={!notifications.length || !unreadCount} onClick={handleMarkAll} className="inline-flex items-center gap-2">
       <CheckCircle2 size={16} /> Marcar todas como leídas
     </Button>
   );
@@ -151,7 +146,7 @@ export default function AlertsPage() {
               </Link>
             )}
             {isPending && (
-              <Button size="sm" variant="ghost" onClick={() => handleMarkSingle(item.id)}>
+              <Button type="button" size="sm" variant="ghost" onClick={() => handleMarkSingle(item.id)}>
                 Marcar leído
               </Button>
             )}
@@ -163,47 +158,18 @@ export default function AlertsPage() {
 
   return (
     <DashboardLayout title="Alertas" actions={actions}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-          }}
-        >
+      <div className="flex flex-col gap-7">
+        <section className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
           {statsCards.map((card) => (
-            <div
-              key={card.label}
-              style={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: 20,
-                padding: "20px 22px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background: `${card.accent}22`,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
+            <div key={card.label} className="bg-card border rounded-xl p-5 flex flex-col gap-2.5">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-md inline-flex items-center justify-center" style={{ background: `${card.accent}22` }}>
                   <card.icon size={18} color={card.accent} />
                 </div>
-                <span style={{ fontSize: 12, textTransform: "uppercase", color: "#64748b", letterSpacing: 0.5 }}>
-                  {card.label}
-                </span>
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">{card.label}</span>
               </div>
-              <strong style={{ fontSize: 28, color: "#0f172a", lineHeight: 1 }}>{card.value}</strong>
-              <span style={{ fontSize: 13, color: "#475569" }}>{card.caption}</span>
+              <strong className="text-2xl text-foreground leading-none">{card.value}</strong>
+              <span className="text-sm text-muted-foreground">{card.caption}</span>
             </div>
           ))}
         </section>
@@ -224,62 +190,41 @@ export default function AlertsPage() {
         )}
 
         {!notifications.length && !loading ? (
-          <div
-            style={{
-              background: "linear-gradient(135deg, #f8fafc, #f1f5f9)",
-              border: "1px solid #e2e8f0",
-              borderRadius: 24,
-              padding: 48,
-              textAlign: "center",
-              color: "#475569",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 16,
-            }}
-          >
+          <div className="bg-muted/30 border rounded-2xl p-12 text-center text-muted-foreground flex flex-col items-center gap-4">
             <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 20,
-                background: "#e0f2fe",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className="w-18 h-18 rounded-xl bg-sky-100 flex items-center justify-center"
             >
               <BellRing size={32} color="#0284c7" />
             </div>
-            <h2 style={{ margin: 0, fontSize: 22, color: "#0f172a" }}>Sin alertas por ahora</h2>
-            <p style={{ margin: 0, fontSize: 14, maxWidth: 360 }}>
+            <h2 className="m-0 text-xl text-foreground">Sin alertas por ahora</h2>
+            <p className="m-0 text-sm max-w-sm">
               Cuando la IA valide documentos o se registren eventos de programación, recibirás aquí los avisos
               importantes para dar seguimiento inmediato.
             </p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+          <div className="flex flex-col gap-7">
             {grouped.unread.length > 0 && (
-              <section style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h2 style={{ margin: 0, fontSize: 19, color: "#0f172a" }}>Pendientes</h2>
-                  <span style={{ color: "#b91c1c", fontWeight: 600 }}>{unreadCount} sin revisar</span>
+              <section className="flex flex-col gap-4">
+                <header className="flex items-center justify-between">
+                  <h2 className="m-0 text-base text-foreground">Pendientes</h2>
+                  <span className="text-red-700 font-semibold">{unreadCount} sin revisar</span>
                 </header>
-                <div style={{ display: "grid", gap: 18 }}>
+                <div className="grid gap-4">
                   {grouped.unread.map((item) => renderNotificationCard(item, { tone: "pending" }))}
                 </div>
               </section>
             )}
 
             {grouped.read.length > 0 && (
-              <section style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h2 style={{ margin: 0, fontSize: 19, color: "#0f172a" }}>Historial</h2>
-                  <span style={{ color: "#475569", fontSize: 13 }}>
+              <section className="flex flex-col gap-4">
+                <header className="flex items-center justify-between">
+                  <h2 className="m-0 text-base text-foreground">Historial</h2>
+                  <span className="text-muted-foreground text-xs">
                     Última actividad {formatDate(grouped.read[0].read_at || grouped.read[0].created_at)}
                   </span>
                 </header>
-                <div style={{ display: "grid", gap: 18 }}>
+                <div className="grid gap-4">
                   {grouped.read.map((item) => renderNotificationCard(item, { tone: "muted" }))}
                 </div>
               </section>

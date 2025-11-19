@@ -160,7 +160,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     async (ids?: number[]) => {
       if (!user) return;
       try {
+        console.log("Marking notifications as read:", ids || "all");
         await apiClient.markNotificationsRead({ notification_ids: ids });
+
+        // Update local state optimistically
         setNotifications((prev) =>
           prev.map((item) => {
             if (!ids || ids.includes(item.id)) {
@@ -172,11 +175,14 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
             return item;
           })
         );
+
+        // Force refresh to ensure sync with server
+        setTimeout(() => refresh(), 500);
       } catch (err) {
         console.error("No se pudieron marcar como leídas", err);
       }
     },
-    [user]
+    [user, refresh]
   );
 
   const unreadCount = useMemo(() => notifications.filter((item) => !item.read_at).length, [notifications]);

@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import ProfileHeader from "../components/profile/ProfileHeader";
 import ProfileHeroCard from "../components/profile/ProfileHeroCard";
 import ProfileOverviewGrid from "../components/profile/ProfileOverviewGrid";
 import ProfileSecuritySection from "../components/profile/ProfileSecuritySection";
+import Button from "../components/ui/Button";
+import { LogOut } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
@@ -22,11 +23,11 @@ export default function ProfilePage() {
       setIsLoggingOut(true);
       try {
         await logout();
-        navigate("/auth");
+        navigate("/register");
       } catch (error) {
         console.error("Error al cerrar sesión:", error);
         setIsLoggingOut(false);
-      } 
+      }
     }
   };
 
@@ -37,11 +38,13 @@ export default function ProfilePage() {
   return (
     <DashboardLayout
       title="Mi Perfil"
-      contentStyle={{ padding: "0 40px 32px 40px" }}
+      actions={
+        <Button variant="primary" onClick={handleLogout} disabled={isLoggingOut}>
+          <LogOut size={16} className="mr-2" /> Cerrar sesión
+        </Button>
+      }
     >
-      <ProfileHeader onLogout={handleLogout} isLoggingOut={isLoggingOut} />
-
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gap: 24 }}>
+      <div className="max-w-5xl mx-auto grid gap-6">
         <ProfileHeroCard
           fullName={user.full_name || ""}
           email={user.email}

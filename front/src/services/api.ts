@@ -189,6 +189,14 @@ export interface DocumentCheckResponse {
   used_fallback?: boolean;
 }
 
+export interface SamplingStatus {
+  completed_at?: string | null;
+  download_scheduled_at?: string | null;
+  export_available: boolean;
+  analysis_uploaded_at?: string | null;
+  final_report_allowed: boolean;
+}
+
 class ApiClient {
   private tokenKey = "auth_token";
 
@@ -337,9 +345,9 @@ class ApiClient {
   }
 
   async aiChat(message: string, model?: string): Promise<ChatResponse> {
-    return await this.request<ChatResponse>(`/ai/chat`, { 
-      method: "POST", 
-      body: JSON.stringify({ message, model }) 
+    return await this.request<ChatResponse>(`/ai/chat`, {
+      method: "POST",
+      body: JSON.stringify({ message, model })
     });
   }
 
@@ -348,9 +356,9 @@ class ApiClient {
   }
 
   async checkDocument(documentId: number, model?: string): Promise<DocumentCheckResponse> {
-    return await this.request<DocumentCheckResponse>(`/ai/check-document`, { 
-      method: "POST", 
-      body: JSON.stringify({ document_id: documentId, model }) 
+    return await this.request<DocumentCheckResponse>(`/ai/check-document`, {
+      method: "POST",
+      body: JSON.stringify({ document_id: documentId, model })
     });
   }
 
@@ -360,6 +368,27 @@ class ApiClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sampling),
     });
+  }
+
+  async completeSampling(id: number, sampling: Record<string, any>, downloadTime?: string | null): Promise<SamplingStatus> {
+    return await this.request<SamplingStatus>(`/oit/${id}/sampling/complete`, {
+      method: "POST",
+      body: JSON.stringify({ sampling, download_time: downloadTime || null }),
+    });
+  }
+
+  async getSamplingStatus(id: number): Promise<SamplingStatus> {
+    return await this.request<SamplingStatus>(`/oit/${id}/sampling/status`, { method: "GET" });
+  }
+
+  async downloadSamplingExport(id: number): Promise<Blob> {
+    return await this.requestBlob(`/oit/${id}/sampling/export`, { method: "GET" });
+  }
+
+  async uploadAnalysis(id: number, file: File): Promise<SamplingStatus> {
+    const fd = new FormData();
+    fd.append("file", file);
+    return await this.requestForm<SamplingStatus>(`/oit/${id}/analysis/upload`, fd, { method: "POST" });
   }
 
   async listNotifications(limit = 50): Promise<NotificationsResponse> {
@@ -389,6 +418,10 @@ class ApiClient {
 
   async deleteResource(id: number): Promise<{ ok: boolean }> {
     return await this.request<{ ok: boolean }>(`/resources/${id}`, { method: "DELETE" });
+  }
+
+  async uploadResourcesCsv(formData: FormData): Promise<{ created: number; errors: string[]; resources: Resource[] }> {
+    return await this.requestForm<{ created: number; errors: string[]; resources: Resource[] }>("/resources/upload-csv", formData);
   }
 }
 

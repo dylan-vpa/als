@@ -22,40 +22,14 @@ export default function ResourcesActiveFilters({
   }
 
   return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
+    <div className="flex flex-wrap items-center gap-2 mb-6">
       {filterType !== "todos" && (
-        <button
-          type="button"
-          onClick={onClearType}
-          style={{
-            border: "none",
-            background: "#dbeafe",
-            color: "#1d4ed8",
-            padding: "6px 12px",
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer"
-          }}
-        >
+        <button type="button" onClick={onClearType} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">
           Tipo: {typeLabels[filterType]} ✕
         </button>
       )}
       {filterAvailable !== "todos" && (
-        <button
-          type="button"
-          onClick={onClearAvailability}
-          style={{
-            border: "none",
-            background: "#dbeafe",
-            color: "#1d4ed8",
-            padding: "6px 12px",
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer"
-          }}
-        >
+        <button type="button" onClick={onClearAvailability} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">
           Disponibilidad: {availabilityLabels[filterAvailable]} ✕
         </button>
       )}

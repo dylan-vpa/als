@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import Input from "../ui/Input";
+import Button from "../ui/Button";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -21,89 +23,19 @@ export default function LoginForm() {
     }
   }
 
-  const inputStyle = {
-    width: "100%",
-    padding: "14px 16px",
-    fontSize: "15px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    outline: "none",
-    transition: "all 0.2s",
-    fontFamily: "inherit"
-  };
-
-  const labelStyle = {
-    display: "block",
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#374151",
-    marginBottom: "8px"
-  };
-
   return (
-    <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div>
-        <label style={labelStyle}>Correo electrónico</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="usuario@empresa.com"
-          required
-          style={inputStyle}
-          onFocus={(e) => e.target.style.borderColor = "#2563eb"}
-          onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-        />
-      </div>
+    <form onSubmit={onSubmit} className="space-y-4">
+      <Input label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="usuario@empresa.com" required />
 
-      <div>
-        <label style={labelStyle}>Contraseña</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Ingresa tu contraseña"
-          required
-          style={inputStyle}
-          onFocus={(e) => e.target.style.borderColor = "#2563eb"}
-          onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
-        />
-      </div>
+      <Input label="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Ingresa tu contraseña" required />
 
       {error && (
-        <div style={{
-          padding: "12px 16px",
-          background: "#fef2f2",
-          border: "1px solid #fecaca",
-          borderRadius: "8px",
-          color: "#991b1b",
-          fontSize: "14px"
-        }}>
-          {error}
-        </div>
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-destructive text-sm">{error}</div>
       )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        style={{
-          width: "100%",
-          padding: "14px",
-          fontSize: "15px",
-          fontWeight: "600",
-          color: "white",
-          background: loading ? "#93c5fd" : "#2563eb",
-          border: "none",
-          borderRadius: "8px",
-          cursor: loading ? "not-allowed" : "pointer",
-          transition: "all 0.2s",
-          marginTop: "8px"
-        }}
-        onMouseEnter={(e) => !loading && (e.currentTarget.style.background = "#1d4ed8")}
-        onMouseLeave={(e) => !loading && (e.currentTarget.style.background = "#2563eb")}
-      >
+      <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Iniciando..." : "Iniciar sesión"}
-      </button>
+      </Button>
     </form>
   );
 }

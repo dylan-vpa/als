@@ -12,7 +12,7 @@ export default function AuthHeroPanel({ title, description, slides, currentSlide
   return (
     <div
       style={{
-        flex: "1",
+        height: "100%",
         backgroundImage: "url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -22,7 +22,6 @@ export default function AuthHeroPanel({ title, description, slides, currentSlide
         padding: "60px",
         position: "relative",
         overflow: "hidden",
-        borderRadius: "32px 0 0 32px"
       }}
       className="auth-hero"
     >

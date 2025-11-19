@@ -2,20 +2,26 @@ import React, { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button";
 import { apiClient, Resource, ResourceCreate, ResourceUpdate } from "../services/api";
 import Modal from "../components/ui/Modal";
+import Input from "../components/ui/Input";
+import * as Select from "@radix-ui/react-select";
 import DashboardLayout from "../components/layout/DashboardLayout";
-import ResourcesHeader from "../components/resources/ResourcesHeader";
 import ResourcesMetrics from "../components/resources/ResourcesMetrics";
 import ResourcesFilterPanel from "../components/resources/ResourcesFilterPanel";
 import ResourcesActiveFilters from "../components/resources/ResourcesActiveFilters";
 import ResourcesListHeader from "../components/resources/ResourcesListHeader";
 import ResourcesTable from "../components/resources/ResourcesTable";
 import ResourcesCardList from "../components/resources/ResourcesCardList";
+import { SlidersHorizontal, PlusCircle, Upload } from "lucide-react";
 
 export default function ResourcesPage() {
   const [items, setItems] = useState<Resource[]>([]);
   const [form, setForm] = useState<ResourceCreate>({ name: "", type: "equipo", quantity: 1, available: true });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [uploadingCsv, setUploadingCsv] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
+  const [csvError, setCsvError] = useState<string | null>(null);
   // Filtros
   const [filterType, setFilterType] = useState<string>("todos");
   const [filterAvailable, setFilterAvailable] = useState<string>("todos");
@@ -127,7 +133,7 @@ export default function ResourcesPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `recursos_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `recursos_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -194,12 +200,64 @@ export default function ResourcesPage() {
     }));
   }
 
+  const handleCsvFileSelect = (file: File | null) => {
+    setCsvError(null);
+    if (!file) {
+      setCsvFile(null);
+      return;
+    }
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext !== "csv") {
+      setCsvError("Solo se aceptan archivos CSV");
+      setCsvFile(null);
+      return;
+    }
+    setCsvFile(file);
+  };
+
+  const handleCsvUpload = async () => {
+    if (!csvFile) return;
+    setUploadingCsv(true);
+    setCsvError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', csvFile);
+      
+      const response = await apiClient.uploadResourcesCsv(formData);
+      
+      if (response.errors && response.errors.length > 0) {
+        setCsvError(`Errores encontrados: ${response.errors.join(', ')}`);
+      }
+      
+      if (response.created > 0) {
+        setCsvModalOpen(false);
+        setCsvFile(null);
+        await load();
+      }
+    } catch (err: any) {
+      setCsvError(err?.message || "Error al cargar CSV");
+    } finally {
+      setUploadingCsv(false);
+    }
+  };
+
   return (
     <DashboardLayout
       title="Recursos"
-      contentStyle={{ padding: "0 clamp(16px, 4vw, 40px) 32px", width: "100%", maxWidth: "100%" }}
+      actions={
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={handleToggleFilters} className="h-11 w-11 rounded-xl border bg-muted/40">
+            <SlidersHorizontal size={18} />
+          </Button>
+          <Button variant="secondary" onClick={() => setCsvModalOpen(true)} className="inline-flex items-center gap-2">
+            <Upload size={16} /> Importar CSV
+          </Button>
+          <Button variant="primary" onClick={() => setIsCreateOpen(true)} className="inline-flex items-center gap-2">
+            <PlusCircle size={16} /> Agregar recurso
+          </Button>
+        </div>
+      }
     >
-      <ResourcesHeader onToggleFilters={handleToggleFilters} onOpenCreate={() => setIsCreateOpen(true)} />
 
       <ResourcesMetrics items={items} />
 
@@ -225,24 +283,11 @@ export default function ResourcesPage() {
         onClearAvailability={handleClearAvailability}
       />
 
-      <div
-        style={{
-          background: "#ffffff",
-          borderRadius: 20,
-          border: "1px solid #e5e7eb",
-          padding: 24,
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-          width: "100%",
-          maxWidth: "min(100%, 1200px)",
-          margin: "0 auto"
-        }}
-      >
+      <div className="bg-card border rounded-xl p-6 flex flex-col gap-4 w-full max-w-5xl mx-auto">
         <ResourcesListHeader filteredCount={filteredItems.length} onExport={exportCSV} />
 
         {filteredItems.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", color: "#6b7280", background: "#f8fafc", borderRadius: 16 }}>
+          <div className="p-8 text-center text-muted-foreground bg-muted/30 rounded-lg">
             No hay recursos que coincidan con los filtros seleccionados.
           </div>
         ) : isCompactTable ? (
@@ -283,38 +328,69 @@ export default function ResourcesPage() {
           </>
         }
       >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-          <div>
-            <label className="label">Nombre</label>
-            <input className="input" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
+          <Input label="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.currentTarget.value })} />
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-foreground/80">Tipo</label>
+            <Select.Root value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+              <Select.Trigger className="inline-flex h-9 items-center justify-between rounded-md border bg-background px-3 text-sm w-full">
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Content className="z-50 rounded-md border bg-popover text-popover-foreground shadow-md">
+                <Select.Viewport className="p-1">
+                  {Object.entries({ vehiculo: "Vehículo", equipo: "Equipo", personal: "Personal", insumo: "Insumo" }).map(([value, label]) => (
+                    <Select.Item key={value} value={value} className="px-2 py-1.5 rounded-sm text-sm cursor-pointer hover:bg-accent/40">
+                      <Select.ItemText>{label}</Select.ItemText>
+                    </Select.Item>
+                  ))}
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Root>
           </div>
-          <div>
-            <label className="label">Tipo</label>
-            <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-              <option value="vehiculo">Vehículo</option>
-              <option value="equipo">Equipo</option>
-              <option value="personal">Personal</option>
-              <option value="insumo">Insumo</option>
-            </select>
+          <Input label="Cantidad" type="number" min={0} value={form.quantity || 1} onChange={(e) => setForm({ ...form, quantity: Number(e.currentTarget.value) })} />
+          <div className="flex items-center gap-2 pt-6">
+            <input type="checkbox" checked={!!form.available} onChange={(e) => setForm({ ...form, available: e.currentTarget.checked })} />
+            <span className="text-sm text-muted-foreground">Disponible</span>
           </div>
-          <div>
-            <label className="label">Cantidad</label>
-            <input className="input" type="number" min={0} value={form.quantity || 1} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} />
-          </div>
-          <div>
-            <label className="label">Disponible</label>
-            <input type="checkbox" checked={!!form.available} onChange={(e) => setForm({ ...form, available: e.target.checked })} />
-          </div>
-          <div style={{ gridColumn: "1 / span 2" }}>
-            <label className="label">Ubicación</label>
-            <input className="input" type="text" value={form.location || ""} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-          </div>
-          <div style={{ gridColumn: "1 / span 2" }}>
-            <label className="label">Descripción</label>
-            <textarea className="input" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Input label="Ubicación" value={form.location || ""} onChange={(e) => setForm({ ...form, location: e.currentTarget.value })} />
+          <div className="col-span-full">
+            <label className="text-sm font-medium text-foreground/80">Descripción</label>
+            <textarea className="mt-2 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring focus:border-ring" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.currentTarget.value })} />
           </div>
         </div>
-        {error && <div className="error" style={{ marginTop: 8 }}>{error}</div>}
+        {error && <div className="text-destructive text-sm mt-2">{error}</div>}
+      </Modal>
+
+      <Modal
+        open={csvModalOpen}
+        title="Importar recursos desde CSV"
+        onClose={() => setCsvModalOpen(false)}
+        actions={
+          <>
+            <Button variant="ghost" onClick={() => setCsvModalOpen(false)}>Cancelar</Button>
+            <Button variant="primary" onClick={handleCsvUpload} disabled={!csvFile || uploadingCsv}>
+              {uploadingCsv ? "Cargando..." : "Importar"}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            Sube un archivo CSV con las columnas: nombre, tipo, cantidad, disponible, ubicación, descripción
+          </p>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={(e) => handleCsvFileSelect(e.target.files?.[0] || null)}
+            className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+          />
+          {csvFile && (
+            <div className="text-sm text-foreground">
+              Archivo seleccionado: <strong>{csvFile.name}</strong>
+            </div>
+          )}
+          {csvError && <div className="text-destructive text-sm">{csvError}</div>}
+        </div>
       </Modal>
     </DashboardLayout>
   );

@@ -1,6 +1,7 @@
 import React from "react";
 import { Resource, ResourceUpdate } from "../../services/api";
 import { PencilLine, Trash2, Check, X } from "lucide-react";
+import Button from "../ui/Button";
 
 interface ResourcesCardListProps {
   items: Resource[];
@@ -26,16 +27,13 @@ export default function ResourcesCardList({
   onDelete
 }: ResourcesCardListProps) {
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div className="grid gap-3">
       {items.map((it) => {
         const isEditing = editingId === it.id;
         return (
-          <div
-            key={it.id}
-            style={{ background: "#f8fafc", borderRadius: 16, border: "1px solid #e5e7eb", padding: 18, display: "grid", gap: 12 }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Recurso</span>
+          <div key={it.id} className="bg-card border rounded-xl p-4 grid gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">Recurso</span>
               {isEditing ? (
                 <input
                   className="input"
@@ -44,12 +42,12 @@ export default function ResourcesCardList({
                   onChange={(e) => onEditChange("name", e.target.value)}
                 />
               ) : (
-                <span style={{ fontWeight: 600, color: "#0f172a", overflowWrap: "anywhere" }}>{it.name}</span>
+                <span className="font-semibold text-foreground break-words">{it.name}</span>
               )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Tipo</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">Tipo</span>
               {isEditing ? (
                 <select
                   className="input"
@@ -62,12 +60,12 @@ export default function ResourcesCardList({
                   <option value="insumo">Insumo</option>
                 </select>
               ) : (
-                <span style={{ color: "#475569" }}>{typeLabels[it.type] || it.type}</span>
+                <span className="text-muted-foreground">{typeLabels[it.type] || it.type}</span>
               )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Cantidad</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">Cantidad</span>
               {isEditing ? (
                 <input
                   className="input"
@@ -77,14 +75,14 @@ export default function ResourcesCardList({
                   onChange={(e) => onEditChange("quantity", Number(e.target.value))}
                 />
               ) : (
-                <span style={{ color: "#0f172a", fontWeight: 600 }}>{it.quantity}</span>
+                <span className="font-semibold text-foreground">{it.quantity}</span>
               )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Disponibilidad</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">Disponibilidad</span>
               {isEditing ? (
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#475569" }}>
+                <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={editForm.available ?? it.available ?? false}
@@ -93,14 +91,14 @@ export default function ResourcesCardList({
                   Disponible
                 </label>
               ) : it.available ? (
-                <span className="badge badge-success">Disponible</span>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-0.5 text-xs font-medium">Disponible</span>
               ) : (
-                <span className="badge badge-danger">Sin stock</span>
+                <span className="inline-flex items-center rounded-full bg-rose-100 text-rose-700 px-2.5 py-0.5 text-xs font-medium">Sin stock</span>
               )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Ubicación</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">Ubicación</span>
               {isEditing ? (
                 <input
                   className="input"
@@ -109,12 +107,12 @@ export default function ResourcesCardList({
                   onChange={(e) => onEditChange("location", e.target.value)}
                 />
               ) : (
-                <span style={{ color: "#475569", overflowWrap: "anywhere" }}>{it.location || "—"}</span>
+                <span className="text-muted-foreground break-words">{it.location || "—"}</span>
               )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12, textTransform: "uppercase", color: "#6b7280", letterSpacing: 0.5 }}>Descripción</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">Descripción</span>
               {isEditing ? (
                 <textarea
                   className="input"
@@ -123,89 +121,28 @@ export default function ResourcesCardList({
                   rows={3}
                 />
               ) : (
-                <span style={{ color: "#475569", overflowWrap: "anywhere" }}>{it.description || "—"}</span>
+                <span className="text-muted-foreground break-words">{it.description || "—"}</span>
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", flexWrap: "wrap" }}>
+            <div className="flex gap-2 justify-start flex-wrap">
               {isEditing ? (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => onSaveEdit(it.id)}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 12,
-                      border: "none",
-                      background: "#22c55e",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                      cursor: "pointer",
-                      boxShadow: "0 4px 10px rgba(34,197,94,0.25)"
-                    }}
-                  >
-                    <Check size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onCancelEdit}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 12,
-                      border: "1px solid #e5e7eb",
-                      background: "#ffffff",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#ef4444",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <X size={16} />
-                  </button>
+                  <Button size="icon" variant="secondary" onClick={() => onSaveEdit(it.id)}>
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="outline" onClick={onCancelEdit}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </>
               ) : (
                 <>
-                  <button
-                    type="button"
-                    onClick={() => onStartEdit(it)}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 12,
-                      border: "1px solid #e5e7eb",
-                      background: "#ffffff",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#1d4ed8",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <PencilLine size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(it.id)}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 12,
-                      border: "1px solid #fee2e2",
-                      background: "#fef2f2",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#dc2626",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <Button size="icon" variant="outline" onClick={() => onStartEdit(it)}>
+                    <PencilLine className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="destructive" onClick={() => onDelete(it.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </>
               )}
             </div>

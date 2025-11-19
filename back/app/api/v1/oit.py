@@ -19,19 +19,64 @@ from ...core.dependencies import get_current_user
 from ...models.system_user import SystemUser
 from ...models.oit_document import OitDocument
 from ...models.resource import Resource
+from ...models.resource_booking import ResourceBooking
 from ...schemas.oit import OitDocumentOut
 from ...services.ai import OitAiService, extract_text, load_reference_text
 from ...services.notifications import create_notification
 from ...services.compliance import evaluate_compliance
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, Response
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List
+from ...services.notifications import create_notification
+
+router = APIRouter(tags=["oit"])
 
 # Import sólo si multipart está disponible, para evitar RuntimeError de FastAPI
 if MULTIPART_AVAILABLE:
     from fastapi import UploadFile, File
 
-router = APIRouter(tags=["oit"])
+@router.get("/oit/{doc_id}/sampling/schema", response_model=Dict)
+def get_sampling_schema(doc_id: int, db: Session = Depends(get_db), current_user: SystemUser = Depends(get_current_user)):
+    doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    # Intentar generar esquema con IA; fallback estático
+    schema: Dict[str, Any] = {
+        "title": f"Formulario de muestreo OIT #{doc.id}",
+        "sections": [
+            {
+                "key": "general",
+                "label": "Datos generales",
+                "fields": [
+                    {"key": "fecha_inicio", "label": "Fecha de inicio", "type": "date"},
+                    {"key": "ubicacion", "label": "Ubicación", "type": "text"},
+                    {"key": "responsable", "label": "Responsable", "type": "text"},
+                ]
+            },
+            {
+                "key": "mediciones",
+                "label": "Mediciones",
+                "fields": [
+                    {"key": "ph_agua", "label": "pH del agua", "type": "number"},
+                    {"key": "turbidez", "label": "Turbidez (NTU)", "type": "number"},
+                    {"key": "observaciones", "label": "Observaciones", "type": "textarea"},
+                ]
+            }
+        ]
+    }
+    try:
+        ai = OitAiService()
+        file_path = BACK_DIR / doc.filename
+        text = extract_text(file_path)
+        prompt = "Genera un esquema JSON para formulario de muestreo con secciones y campos (key,label,type)."
+        result = ai.chat(message=prompt, system_prompt=text)
+        maybe = result.get("reply")
+        data = json.loads(maybe)
+        if isinstance(data, dict) and data.get("sections"):
+            schema = data
+    except Exception:
+        pass
+    return schema
 logger = logging.getLogger("oit.api")
 
 # Directorio base del backend (../..../back)
@@ -40,6 +85,8 @@ UPLOADS_DIR = BACK_DIR / "uploads" / "oit"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 REVIEWS_DIR = UPLOADS_DIR / "reviews"
 REVIEWS_DIR.mkdir(parents=True, exist_ok=True)
+ANALYSIS_DIR = UPLOADS_DIR / "analysis"
+ANALYSIS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _parse_list(value: str | None) -> list[str]:
@@ -73,6 +120,22 @@ def _report_path_for(doc: OitDocument) -> Path:
     name = Path(doc.filename).stem
     return REVIEWS_DIR / f"{name}_report.json"
 
+def _sampling_meta_path(doc: OitDocument) -> Path:
+    name = Path(doc.filename).stem
+    return REVIEWS_DIR / f"{name}_sampling_meta.json"
+
+def _sampling_export_path(doc: OitDocument) -> Path:
+    name = Path(doc.filename).stem
+    return REVIEWS_DIR / f"{name}_sampling_export.txt"
+
+def _analysis_path_for(doc: OitDocument) -> Path:
+    name = Path(doc.filename).stem
+    return ANALYSIS_DIR / f"{name}_analysis.txt"
+
+def _analysis_file_path_for(doc: OitDocument) -> Path:
+    name = Path(doc.filename).stem
+    return ANALYSIS_DIR / f"{name}_analysis.pdf"
+
 
 def _serialize_doc(doc: OitDocument) -> OitDocumentOut:
     alerts = _parse_list(doc.alerts)
@@ -98,6 +161,18 @@ def _serialize_doc(doc: OitDocument) -> OitDocumentOut:
     gap_items = _extract_gap_items(resource_gaps)
     pending_gap_count = sum(1 for gap in gap_items if (gap or {}).get("quantity", 0) > 0)
 
+    # Determinar si se puede muestrear:
+    # - Debe estar aprobado
+    # - No deben existir recursos faltantes
+    # - Si hay fecha programada aprobada, debe haberse alcanzado (now >= approved_schedule_date)
+    now = datetime.utcnow()
+    approved_time_ok = True
+    try:
+        if doc.approved_schedule_date is not None:
+            approved_time_ok = now >= doc.approved_schedule_date
+    except Exception:
+        approved_time_ok = True
+
     data = {
         "id": doc.id,
         "filename": doc.filename,
@@ -112,7 +187,7 @@ def _serialize_doc(doc: OitDocument) -> OitDocumentOut:
         "can_recommend": doc.status == "check" and not alerts and not missing,
         "compliance_bundle_path": doc.compliance_bundle_path,
         "compliance_report_path": doc.compliance_report_path,
-        "can_sample": (doc.approval_status == "approved" and pending_gap_count == 0),
+        "can_sample": (doc.approval_status == "approved" and pending_gap_count == 0 and approved_time_ok),
         "pending_gap_count": pending_gap_count,
         "approval_status": doc.approval_status,
         "approved_schedule_date": doc.approved_schedule_date,
@@ -144,6 +219,228 @@ class PlanConfirmRequest(BaseModel):
     plan: Dict[str, Any] | None = None
     gaps: Dict[str, Any] | None = None
 
+class SamplingCompleteRequest(BaseModel):
+    sampling: Dict[str, Any]
+    download_time: datetime | None = None
+
+class SamplingStatus(BaseModel):
+    completed_at: datetime | None = None
+    download_scheduled_at: datetime | None = None
+    export_available: bool = False
+    analysis_uploaded_at: datetime | None = None
+    final_report_allowed: bool = False
+
+def _read_sampling_status(doc: OitDocument) -> SamplingStatus:
+    meta_path = _sampling_meta_path(doc)
+    status = SamplingStatus()
+    if meta_path.exists():
+        try:
+            data = json.loads(meta_path.read_text(encoding="utf-8"))
+            status.completed_at = (datetime.fromisoformat(data.get("completed_at")) if data.get("completed_at") else None)
+            status.download_scheduled_at = (datetime.fromisoformat(data.get("download_scheduled_at")) if data.get("download_scheduled_at") else None)
+            status.analysis_uploaded_at = (datetime.fromisoformat(data.get("analysis_uploaded_at")) if data.get("analysis_uploaded_at") else None)
+        except Exception:
+            pass
+    export_path = _sampling_export_path(doc)
+    # export disponible sólo si existe y ya se alcanzó la hora programada
+    now = datetime.utcnow()
+    scheduled_ok = not status.download_scheduled_at or now >= status.download_scheduled_at
+    status.export_available = export_path.exists() and scheduled_ok
+    status.final_report_allowed = status.analysis_uploaded_at is not None
+    return status
+
+@router.post("/oit/{doc_id}/sampling/complete")
+def sampling_complete(
+    doc_id: int,
+    payload: SamplingCompleteRequest,
+    db: Session = Depends(get_db),
+    current_user: SystemUser = Depends(get_current_user),
+):
+    doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+
+    # Guardar export del muestreo como texto plano
+    export_path = _sampling_export_path(doc)
+    lines = ["MUESTREO COMPLETADO", f"OIT #{doc.id}", "", "Datos de Muestreo:"]
+    for k, v in (payload.sampling or {}).items():
+        lines.append(f"- {k}: {v}")
+    try:
+        export_path.write_text("\n".join(lines), encoding="utf-8")
+    except Exception as exc:
+        logger.warning(f"No se pudo escribir export de muestreo: {exc}")
+
+    # Guardar metadatos (completado y horario de descarga)
+    meta_path = _sampling_meta_path(doc)
+    started_at_str = None
+    try:
+        started_at_raw = (payload.sampling or {}).get("fecha_inicio")
+        if isinstance(started_at_raw, str) and started_at_raw:
+            # fecha_inicio es YYYY-MM-DD; agregar hora por defecto si no viene
+            started_at_str = f"{started_at_raw}T09:00"
+    except Exception:
+        started_at_str = None
+
+    meta = {
+        "completed_at": datetime.utcnow().isoformat(),
+        "started_at": started_at_str,
+        "download_scheduled_at": (payload.download_time.isoformat() if payload.download_time else None),
+        "analysis_uploaded_at": None,
+    }
+    try:
+        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as exc:
+        logger.warning(f"No se pudo escribir metadatos de muestreo: {exc}")
+
+    # Notificaciones de horario
+    try:
+        from ...services.notifications import create_notification
+        scheduled = doc.approved_schedule_date
+        if scheduled:
+            # Comparar inicio respecto a programado
+            if started_at_str:
+                try:
+                    started_dt = datetime.fromisoformat(started_at_str)
+                    if started_dt < scheduled:
+                        create_notification(
+                            db,
+                            user_id=current_user.id,
+                            type="sampling.started_early",
+                            title="Muestreo iniciado antes de lo programado",
+                            message=f"La OIT #{doc.id} inició muestreo a las {started_dt.isoformat()} (programado {scheduled.isoformat()}).",
+                            document_id=doc.id,
+                            payload={"scheduled": scheduled.isoformat(), "started": started_dt.isoformat()},
+                        )
+                    elif started_dt > scheduled:
+                        create_notification(
+                            db,
+                            user_id=current_user.id,
+                            type="sampling.started_late",
+                            title="Muestreo iniciado después de lo programado",
+                            message=f"La OIT #{doc.id} inició muestreo a las {started_dt.isoformat()} (programado {scheduled.isoformat()}).",
+                            document_id=doc.id,
+                            payload={"scheduled": scheduled.isoformat(), "started": started_dt.isoformat()},
+                        )
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    return _read_sampling_status(doc).model_dump()
+
+@router.get("/oit/{doc_id}/sampling/status", response_model=SamplingStatus)
+def get_sampling_status(doc_id: int, db: Session = Depends(get_db), current_user: SystemUser = Depends(get_current_user)):
+    doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    return _read_sampling_status(doc)
+
+@router.get("/oit/{doc_id}/sampling/export")
+def download_sampling_export(doc_id: int, db: Session = Depends(get_db), current_user: SystemUser = Depends(get_current_user)):
+    doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    status = _read_sampling_status(doc)
+    if not status.export_available:
+        raise HTTPException(status_code=403, detail="Export de muestreo aún no disponible")
+    path = _sampling_export_path(doc)
+    return FileResponse(path, media_type="text/plain", filename=path.name)
+
+if MULTIPART_AVAILABLE:
+    @router.post("/oit/{doc_id}/analysis/upload")
+    async def upload_analysis_file(
+        doc_id: int,
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db),
+        current_user: SystemUser = Depends(get_current_user),
+    ):
+        doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
+        if not doc:
+            raise HTTPException(status_code=404, detail="Documento no encontrado")
+        if not file or not file.filename:
+            raise HTTPException(status_code=400, detail="Archivo de análisis requerido")
+        content_type = (file.content_type or "").lower()
+        if "pdf" not in content_type and not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Sólo se aceptan archivos PDF para el análisis")
+
+        dest = _analysis_file_path_for(doc)
+        try:
+            content = await file.read()
+            dest.write_bytes(content)
+        except Exception as exc:
+            logger.warning(f"No se pudo guardar PDF de análisis: {exc}")
+            raise HTTPException(status_code=500, detail="No se pudo guardar el archivo de análisis")
+
+        # Intentar extraer texto del PDF para incluir en el informe final
+        txt_path = _analysis_path_for(doc)
+        try:
+            extracted = extract_text(dest)
+            txt_path.write_text(extracted or "", encoding="utf-8")
+        except Exception:
+            # Si falla extracción, continuar con PDF solo
+            pass
+
+        # Actualizar metadatos de muestreo
+        meta_path = _sampling_meta_path(doc)
+        meta = {}
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except Exception:
+                meta = {}
+        meta["analysis_uploaded_at"] = datetime.utcnow().isoformat()
+        try:
+            meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+        return _read_sampling_status(doc).model_dump()
+else:
+    @router.post("/oit/{doc_id}/analysis/upload")
+    def upload_analysis(
+        doc_id: int,
+        text: str = Body(..., embed=True, description="Texto del análisis realizado"),
+        db: Session = Depends(get_db),
+        current_user: SystemUser = Depends(get_current_user),
+    ):
+        doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
+        if not doc:
+            raise HTTPException(status_code=404, detail="Documento no encontrado")
+        if not text or not text.strip():
+            raise HTTPException(status_code=400, detail="Texto de análisis vacío")
+
+        analysis_path = _analysis_path_for(doc)
+        try:
+            analysis_path.write_text(text.strip(), encoding="utf-8")
+        except Exception as exc:
+            logger.warning(f"No se pudo escribir análisis: {exc}")
+            raise HTTPException(status_code=500, detail="No se pudo guardar el análisis")
+
+        # Actualizar metadatos de muestreo
+        meta_path = _sampling_meta_path(doc)
+        meta = {}
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except Exception:
+                meta = {}
+        meta["analysis_uploaded_at"] = datetime.utcnow().isoformat()
+        try:
+            meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+        return _read_sampling_status(doc).model_dump()
+
+
+def _overlaps(a_start: datetime, a_end: datetime, b_start: datetime, b_end: datetime) -> bool:
+    return not (a_end <= b_start or b_end <= a_start)
+
+def _default_slot(dt: datetime | None) -> tuple[datetime | None, datetime | None]:
+    if not dt:
+        return None, None
+    # Slot de 2 horas por defecto
+    return dt, dt.replace(hour=dt.hour + 2)
 
 def _build_plan(doc: OitDocument, plan_request: PlanRequest, db: Session) -> tuple[Dict[str, Any], List[Dict[str, Any]]]:
     assignments: List[Dict[str, Any]] = []
@@ -157,10 +454,24 @@ def _build_plan(doc: OitDocument, plan_request: PlanRequest, db: Session) -> tup
         resources = query.order_by(Resource.available.desc(), Resource.quantity.desc()).all()
 
         matches: List[Dict[str, Any]] = []
+        start_dt, end_dt = _default_slot(plan_request.scheduled_datetime)
         for resource in resources:
             available_qty = resource.quantity if resource.available else 0
             if available_qty <= 0:
                 continue
+            if resource.status == "maintenance":
+                continue
+            # Comprobar reservas en el slot
+            if start_dt and end_dt:
+                bookings = (
+                    db.query(ResourceBooking)
+                    .filter(ResourceBooking.resource_id == resource.id)
+                    .filter(ResourceBooking.status.in_(["booked", "maintenance"]))
+                    .all()
+                )
+                conflict = any(_overlaps(start_dt, end_dt, b.start_datetime, b.end_datetime) for b in bookings)
+                if conflict:
+                    continue
             allocated = min(available_qty, remaining)
             if allocated <= 0:
                 continue
@@ -189,7 +500,7 @@ def _build_plan(doc: OitDocument, plan_request: PlanRequest, db: Session) -> tup
                 "type": req.type,
                 "name": req.name,
                 "quantity": remaining,
-                "status": "no se tiene, pero se requiere",
+                "status": "no disponible o en mantenimiento",
             })
 
     plan = {
@@ -585,6 +896,21 @@ def create_plan(
     db.commit()
     db.refresh(doc)
 
+    # Alertar por faltantes si existen
+    try:
+        if gaps:
+            create_notification(
+                db,
+                user_id=current_user.id,
+                type="oit.plan_revision",
+                title="Recursos faltantes para la OIT",
+                message=f"La OIT #{doc.id} tiene recursos faltantes o no disponibles. Revisa y solicita ajustes.",
+                document_id=doc.id,
+                payload={"gaps": gaps},
+            )
+    except Exception:
+        pass
+
     return {
         "approval_status": doc.approval_status,
         "plan": plan,
@@ -630,6 +956,22 @@ def confirm_plan(
     if payload.approved:
         doc.approval_status = "approved"
         doc.approved_schedule_date = payload.scheduled_datetime
+        # Crear reservas para los recursos asignados
+        try:
+            plan_obj = payload.plan or json.loads(doc.resource_plan or "{}")
+            assigns = plan_obj.get("assignments", []) if isinstance(plan_obj, dict) else []
+            start_dt = doc.approved_schedule_date
+            end_dt = start_dt.replace(hour=start_dt.hour + 2) if start_dt else None
+            for entry in assigns:
+                for m in (entry.get("assignments") or []):
+                    res_id = m.get("id")
+                    qty = m.get("allocated_quantity", 0)
+                    if res_id and start_dt and end_dt and qty > 0:
+                        booking = ResourceBooking(resource_id=res_id, start_datetime=start_dt, end_datetime=end_dt, status="booked")
+                        db.add(booking)
+            db.commit()
+        except Exception:
+            pass
     else:
         doc.approval_status = "needs_revision"
         doc.approved_schedule_date = None
@@ -671,6 +1013,23 @@ def generate_final_report(
     doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
+    # Validar que el análisis haya sido subido
+    status = _read_sampling_status(doc)
+    if not status.final_report_allowed:
+        raise HTTPException(status_code=403, detail="El informe final sólo se genera después de subir el análisis")
+    # Cargar contenido del análisis (texto); si no existe, intentar extraer del PDF
+    analysis_text = ""
+    try:
+        analysis_text = _analysis_path_for(doc).read_text(encoding="utf-8")
+    except Exception:
+        analysis_text = ""
+    if not analysis_text:
+        pdf_path = _analysis_file_path_for(doc)
+        try:
+            if pdf_path.exists():
+                analysis_text = extract_text(pdf_path) or ""
+        except Exception:
+            analysis_text = ""
 
     # Construir texto básico de informe; en el futuro se puede invocar IA
     lines = []
@@ -687,6 +1046,9 @@ def generate_final_report(
     lines.append("Datos de Muestreo:")
     for k, v in (sampling or {}).items():
         lines.append(f"- {k}: {v}")
+    lines.append("")
+    lines.append("Análisis:")
+    lines.append(analysis_text or "(sin análisis)")
     content = "\n".join(lines)
 
     def _iter():
@@ -695,3 +1057,49 @@ def generate_final_report(
     filename = f"informe_final_{doc_id}.txt"
     headers = {"Content-Disposition": f"attachment; filename=\"{filename}\""}
     return StreamingResponse(_iter(), media_type="text/plain", headers=headers)
+
+@router.post("/oit/{doc_id}/final-report/html")
+def generate_final_report_html(
+    doc_id: int,
+    sampling: dict = Body(..., description="Datos del formulario de muestreo"),
+    db: Session = Depends(get_db),
+    current_user: SystemUser = Depends(get_current_user),
+):
+    doc = db.query(OitDocument).filter(OitDocument.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    status = _read_sampling_status(doc)
+    if not status.final_report_allowed:
+        raise HTTPException(status_code=403, detail="El informe final sólo se genera después de subir el análisis")
+    analysis_text = ""
+    try:
+        analysis_text = _analysis_path_for(doc).read_text(encoding="utf-8")
+    except Exception:
+        analysis_text = ""
+    if not analysis_text:
+        pdf_path = _analysis_file_path_for(doc)
+        try:
+            if pdf_path.exists():
+                analysis_text = extract_text(pdf_path) or ""
+        except Exception:
+            analysis_text = ""
+
+    tpl_path = BACK_DIR / "app" / "report_templates" / "final_report.html"
+    try:
+        html = tpl_path.read_text(encoding="utf-8")
+    except Exception:
+        raise HTTPException(status_code=500, detail="No se encontró la plantilla HTML")
+
+    sampling_items = "\n".join([f"<li><strong>{k}:</strong> {v}</li>" for k, v in (sampling or {}).items()])
+    out = (
+        html
+        .replace("{{doc_id}}", str(doc.id))
+        .replace("{{doc_name}}", doc.original_name or doc.filename)
+        .replace("{{doc_status}}", doc.status)
+        .replace("{{approved_status}}", doc.approval_status)
+        .replace("{{created_at}}", str(doc.created_at))
+        .replace("{{summary}}", (doc.summary or "(sin resumen)").replace("<", "&lt;").replace(">", "&gt;"))
+        .replace("{{sampling_items}}", sampling_items)
+        .replace("{{analysis_text}}", (analysis_text or "(sin análisis)").replace("<", "&lt;").replace(">", "&gt;"))
+    )
+    return Response(content=out, media_type="text/html", headers={"Content-Disposition": f"attachment; filename=\"informe_final_{doc_id}.html\""})

@@ -1,0 +1,13 @@
+OIT Instalación de Sensores Ambientales
+Identificador: OIT-2025-101
+Versión del documento: 0.8 (borrador)
+Fecha de emisión: 2025-09-30
+Responsable que aprueba: Pendiente de asignación
+Alcance detallado:
+- Implementar sensores de temperatura y humedad en depósitos norte y sur.
+- Conectar los sensores al sistema SCADA existente.
+
+Notas:
+- Requisitos legales: por definir con el área de cumplimiento.
+- Evidencias y anexos: aún no se levantan hasta validar proveedores.
+- Plan de recursos: se solicitará en la siguiente iteración del proyecto.
